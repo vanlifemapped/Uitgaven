@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Reis Kosten Tracker</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Supabase JS client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- SheetJS voor Excel Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js voor Grafieken -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -16,6 +19,7 @@
       <button class="tab-btn active" onclick="switchTab('invoer')">Invoer</button>
       <button class="tab-btn" onclick="switchTab('maand')">Maand</button>
       <button class="tab-btn" onclick="switchTab('jaar')">Jaar</button>
+      <button class="tab-btn" onclick="switchTab('grafieken')">Grafieken</button>
       <button class="tab-btn" onclick="switchTab('vaste-lasten')">Vaste Lasten</button>
     </nav>
   </header>
@@ -82,6 +86,8 @@
         <h3>Per Categorie</h3>
         <div id="maand-categories-list"></div>
       </div>
+
+      <button class="btn btn-export" onclick="exportToExcel()">📊 Export naar Excel</button>
     </section>
 
     <!-- TAB 3: JAAR OVERZICHT -->
@@ -106,9 +112,26 @@
         <h3>Per Maand</h3>
         <div id="jaar-months-list"></div>
       </div>
+
+      <button class="btn btn-export" onclick="exportToExcel()">📊 Export naar Excel</button>
     </section>
 
-    <!-- TAB 4: VASTE LASTEN BEHEER -->
+    <!-- TAB 4: GRAFIEKEN -->
+    <section id="tab-grafieken" class="tab-content">
+      <h2>Inzicht & Grafieken</h2>
+      
+      <div class="chart-box">
+        <h3>Verdeling per Categorie (Deze Maand)</h3>
+        <canvas id="categoryPieChart"></canvas>
+      </div>
+
+      <div class="chart-box" style="margin-top: 24px;">
+        <h3>Kostenverloop per Maand</h3>
+        <canvas id="monthlyBarChart"></canvas>
+      </div>
+    </section>
+
+    <!-- TAB 5: VASTE LASTEN BEHEER -->
     <section id="tab-vaste-lasten" class="tab-content">
       <h2>Beheer Vaste Lasten</h2>
       <p class="subtext">Deze posten worden elke 1e van de maand automatisch toegevoegd aan de uitgaven.</p>
