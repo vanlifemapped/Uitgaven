@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Reis Kosten Tracker</title>
+  <title>Reis Kosten & Inkomsten Tracker</title>
   <link rel="stylesheet" href="style.css">
   
   <!-- SheetJS voor Excel Export -->
@@ -14,7 +14,7 @@
 <body>
 
   <header class="app-header">
-    <h1>Kosten Tracker</h1>
+    <h1>Reis Budget Tracker</h1>
     <nav class="tab-nav">
       <button class="tab-btn active" onclick="switchTab('invoer')">Invoer</button>
       <button class="tab-btn" onclick="switchTab('maand')">Maand</button>
@@ -26,10 +26,21 @@
 
   <main class="container">
 
-    <!-- TAB 1: KOSTEN INVOEREN -->
+    <!-- TAB 1: INVOEREN (UITGAVE / INKOMST) -->
     <section id="tab-invoer" class="tab-content active">
-      <h2>Nieuwe Uitgave</h2>
-      <form id="expense-form" onsubmit="saveExpense(event)">
+      <h2>Boeking Invoeren</h2>
+      <form id="expense-form" onsubmit="saveTransaction(event)">
+        
+        <!-- Type Keuze: Uitgave of Inkomst -->
+        <div class="type-selector">
+          <label class="type-btn active" id="type-uitgave-label">
+            <input type="radio" name="trans-type" value="uitgave" checked onchange="toggleType('uitgave')"> Uitgave
+          </label>
+          <label class="type-btn" id="type-inkomst-label">
+            <input type="radio" name="trans-type" value="inkomst" onchange="toggleType('inkomst')"> Inkomst
+          </label>
+        </div>
+
         <div class="form-group">
           <label for="datum">Datum</label>
           <input type="date" id="datum" required>
@@ -43,28 +54,20 @@
         <div class="form-group">
           <label for="categorie">Categorie</label>
           <select id="categorie" required>
-            <option value="Brandstof">Brandstof</option>
-            <option value="Tol">Tol</option>
-            <option value="Wassen">Wassen</option>
-            <option value="Kingsley">Kingsley</option>
-            <option value="Terras">Terras</option>
-            <option value="Boodschappen">Boodschappen</option>
-            <option value="Kleding">Kleding</option>
-            <option value="Diversen">Diversen</option>
-            <option value="Vaste lasten">Vaste lasten</option>
+            <!-- Dynamisch gevuld via JavaScript op basis van type -->
           </select>
         </div>
 
         <div class="form-group">
           <label for="omschrijving">Omschrijving / Notitie</label>
-          <input type="text" id="omschrijving" placeholder="Bijv. Diesel getankt, Supermarkt...">
+          <input type="text" id="omschrijving" placeholder="Bijv. Diesel, Supermarkt, Salaris...">
         </div>
 
-        <button type="submit" class="btn btn-primary">Opslaan</button>
+        <button type="submit" class="btn btn-primary" id="save-btn">Uitgave Opslaan</button>
       </form>
 
       <div class="recent-list">
-        <h3>Laatste uitgaven</h3>
+        <h3>Laatste mutaties</h3>
         <ul id="recent-expenses-ul"></ul>
       </div>
     </section>
@@ -77,13 +80,23 @@
         <input type="month" id="maand-select" onchange="loadMonthOverview()">
       </div>
 
-      <div class="total-card">
-        <span>Totaal deze maand:</span>
-        <strong id="maand-totaal-bedrag">€ 0,00</strong>
+      <div class="summary-cards">
+        <div class="card card-income">
+          <span>Inkomsten</span>
+          <strong id="maand-inkomsten-bedrag">€ 0,00</strong>
+        </div>
+        <div class="card card-expense">
+          <span>Uitgaven</span>
+          <strong id="maand-uitgaven-bedrag">€ 0,00</strong>
+        </div>
+        <div class="card card-net">
+          <span>Saldo</span>
+          <strong id="maand-saldo-bedrag">€ 0,00</strong>
+        </div>
       </div>
 
       <div class="category-breakdown">
-        <h3>Per Categorie</h3>
+        <h3>Per Categorie (Uitgaven)</h3>
         <div id="maand-categories-list"></div>
       </div>
 
@@ -98,18 +111,28 @@
         <select id="jaar-select" onchange="loadYearOverview()"></select>
       </div>
 
-      <div class="total-card">
-        <span>Totaal dit jaar:</span>
-        <strong id="jaar-totaal-bedrag">€ 0,00</strong>
+      <div class="summary-cards">
+        <div class="card card-income">
+          <span>Jaar Inkomsten</span>
+          <strong id="jaar-inkomsten-bedrag">€ 0,00</strong>
+        </div>
+        <div class="card card-expense">
+          <span>Jaar Uitgaven</span>
+          <strong id="jaar-uitgaven-bedrag">€ 0,00</strong>
+        </div>
+        <div class="card card-net">
+          <span>Netto Saldo</span>
+          <strong id="jaar-saldo-bedrag">€ 0,00</strong>
+        </div>
       </div>
 
       <div class="category-breakdown">
-        <h3>Per Categorie (Jaar)</h3>
+        <h3>Per Categorie (Jaar Uitgaven)</h3>
         <div id="jaar-categories-list"></div>
       </div>
 
       <div class="month-breakdown">
-        <h3>Per Maand</h3>
+        <h3>Verloop per Maand</h3>
         <div id="jaar-months-list"></div>
       </div>
 
@@ -121,12 +144,12 @@
       <h2>Inzicht & Grafieken</h2>
       
       <div class="chart-box">
-        <h3>Verdeling per Categorie (Deze Maand)</h3>
+        <h3>Uitgaven per Categorie (Deze Maand)</h3>
         <canvas id="categoryPieChart"></canvas>
       </div>
 
       <div class="chart-box" style="margin-top: 24px;">
-        <h3>Kostenverloop per Maand</h3>
+        <h3>Inkomsten vs Uitgaven per Maand</h3>
         <canvas id="monthlyBarChart"></canvas>
       </div>
     </section>
