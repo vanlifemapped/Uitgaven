@@ -1,27 +1,39 @@
-// === SUPABASE CONFIGURATIE ===
-const SUPABASE_URL = 'JOUW_SUPABASE_URL_HIER';
-const SUPABASE_KEY = 'JOUW_SUPABASE_ANON_KEY_HIER';
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-
 // === INITIALISATIE ===
 document.addEventListener('DOMContentLoaded', () => {
-  // Vul de datum in op vandaag
+  // Vul de datum standaard in op vandaag
   document.getElementById('datum').valueAsDate = new Date();
 
-  // Stel standaard maand in op huidige maand
+  // Stel standaard maand in op huidige maand (YYYY-MM)
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   document.getElementById('maand-select').value = currentMonthStr;
 
-  // Vul jaarselectie in
+  // Vul het jaar-keuzemenu in
   initYearSelect(now.getFullYear());
 
-  // Controleer en kopieer vaste lasten voor de huidige maand
+  // Controleer en kopieer automatisch de vaste lasten voor de huidige maand
   checkAndCopyFixedExpenses();
 
-  // Laad eerste gegevens
+  // Laad de laatste uitgaven op het hoofdscherm
   loadRecentExpenses();
 });
+
+// === LOCALSTORAGE HELPERS ===
+function getExpenses() {
+  return JSON.parse(localStorage.getItem('reis_uitgaven') || '[]');
+}
+
+function saveExpensesToStorage(expenses) {
+  localStorage.setItem('reis_uitgaven', JSON.stringify(expenses));
+}
+
+function getFixedTemplates() {
+  return JSON.parse(localStorage.getItem('reis_vaste_lasten') || '[]');
+}
+
+function saveFixedTemplatesToStorage(templates) {
+  localStorage.setItem('reis_vaste_lasten', JSON.stringify(templates));
+}
 
 // === TAB NAVIGATIE ===
 function switchTab(tabName) {
@@ -31,47 +43,44 @@ function switchTab(tabName) {
   event.currentTarget.classList.add('active');
   document.getElementById(`tab-${tabName}`).classList.add('active');
 
+  if (tabName === 'invoer') loadRecentExpenses();
   if (tabName === 'maand') loadMonthOverview();
   if (tabName === 'jaar') loadYearOverview();
   if (tabName === 'vaste-lasten') loadFixedTemplates();
 }
 
-// === VASTE LASTEN AUTOMATISEREN ===
-async function checkAndCopyFixedExpenses() {
+// === AUTOMATISCH VASTE LASTEN KOPIËREN ===
+function checkAndCopyFixedExpenses() {
   const now = new Date();
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const firstOfMonth = `${yearMonth}-01`;
 
+  // Sleutel om te onthouden of we DEZE maand al gekopieerd hebben
   const key = `fixed_applied_${yearMonth}`;
-  if (localStorage.getItem(key)) return; // Al verwerkt deze maand
+  if (localStorage.getItem(key)) return; // Al verwerkt voor deze maand!
 
-  if (!supabase) return;
+  const templates = getFixedTemplates();
+  if (templates.length === 0) return;
 
-  // Haal actieve vaste lasten templates op
-  const { data: templates, error: tErr } = await supabase
-    .from('vaste_lasten_template')
-    .select('*');
+  const currentExpenses = getExpenses();
 
-  if (tErr || !templates || templates.length === 0) return;
+  // Koppel elke vaste last als nieuwe uitgave voor de 1e van de maand
+  templates.forEach(t => {
+    currentExpenses.push({
+      id: Date.now() + Math.random(),
+      datum: firstOfMonth,
+      bedrag: parseFloat(t.bedrag),
+      categorie: 'Vaste lasten',
+      omschrijving: t.omschrijving
+    });
+  });
 
-  // Voeg templates toe aan uitgaven tabel
-  const toInsert = templates.map(t => ({
-    datum: firstOfMonth,
-    bedrag: t.bedrag,
-    categorie: 'Vaste lasten',
-    omschrijving: t.omschrijving
-  }));
-
-  const { error: iErr } = await supabase.from('uitgaven').insert(toInsert);
-
-  if (!iErr) {
-    localStorage.setItem(key, 'true');
-    console.log(`Vaste lasten automatisch gekopieerd voor ${yearMonth}`);
-  }
+  saveExpensesToStorage(currentExpenses);
+  localStorage.setItem(key, 'true'); // Markeer als verwerkt
 }
 
-// === UITGAVEN INVOEREN & OPSLAAN ===
-async function saveExpense(e) {
+// === UITGAVEN INVOEREN & OMSLAAN ===
+function saveExpense(e) {
   e.preventDefault();
 
   const datum = document.getElementById('datum').value;
@@ -79,72 +88,66 @@ async function saveExpense(e) {
   const categorie = document.getElementById('categorie').value;
   const omschrijving = document.getElementById('omschrijving').value;
 
-  if (!supabase) {
-    alert('Supabase is nog niet geconfigureerd.');
-    return;
-  }
+  const newExpense = {
+    id: Date.now(),
+    datum,
+    bedrag,
+    categorie,
+    omschrijving
+  };
 
-  const { error } = await supabase
-    .from('uitgaven')
-    .insert([{ datum, bedrag, categorie, omschrijving }]);
+  const expenses = getExpenses();
+  expenses.push(newExpense);
+  saveExpensesToStorage(expenses);
 
-  if (error) {
-    alert('Fout bij opslaan: ' + error.message);
-  } else {
-    document.getElementById('expense-form').reset();
-    document.getElementById('datum').valueAsDate = new Date();
-    loadRecentExpenses();
-    alert('Uitgave opgeslagen!');
-  }
+  document.getElementById('expense-form').reset();
+  document.getElementById('datum').valueAsDate = new Date();
+  loadRecentExpenses();
+  alert('Uitgave opgeslagen!');
 }
 
-async function loadRecentExpenses() {
-  if (!supabase) return;
-
-  const { data, error } = await supabase
-    .from('uitgaven')
-    .select('*')
-    .order('datum', { ascending: false })
-    .limit(5);
+function loadRecentExpenses() {
+  const expenses = getExpenses();
+  // Sorteer op meest recente datum
+  expenses.sort((a, b) => new Date(b.datum) - new Date(a.datum));
 
   const ul = document.getElementById('recent-expenses-ul');
   ul.innerHTML = '';
 
-  if (data) {
-    data.forEach(item => {
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <div>
-          <strong>${item.categorie}</strong> - ${item.omschrijving || 'Geen notitie'}<br>
-          <small style="color: #718096;">${item.datum}</small>
-        </div>
-        <strong>€ ${parseFloat(item.bedrag).toFixed(2)}</strong>
-      `;
-      ul.appendChild(li);
-    });
+  const recent = expenses.slice(0, 5); // Toon laatste 5
+
+  if (recent.length === 0) {
+    ul.innerHTML = '<li style="color: #718096;">Nog geen uitgaven ingevoerd.</li>';
+    return;
   }
+
+  recent.forEach(item => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div>
+        <strong>${item.categorie}</strong> - ${item.omschrijving || 'Geen notitie'}<br>
+        <small style="color: #718096;">${item.datum}</small>
+      </div>
+      <strong>€ ${parseFloat(item.bedrag).toFixed(2)}</strong>
+    `;
+    ul.appendChild(li);
+  });
 }
 
 // === MAAND OVERZICHT ===
-async function loadMonthOverview() {
-  const selectedMonth = document.getElementById('maand-select').value; // YYYY-MM
-  if (!selectedMonth || !supabase) return;
+function loadMonthOverview() {
+  const selectedMonth = document.getElementById('maand-select').value; // Formaat: YYYY-MM
+  if (!selectedMonth) return;
 
-  const startDate = `${selectedMonth}-01`;
-  const endDate = `${selectedMonth}-31`;
-
-  const { data, error } = await supabase
-    .from('uitgaven')
-    .select('*')
-    .gte('datum', startDate)
-    .lte('datum', endDate);
-
-  if (error) return;
+  const expenses = getExpenses();
+  
+  // Filter uitgaven die beginnen met YYYY-MM
+  const monthExpenses = expenses.filter(e => e.datum.startsWith(selectedMonth));
 
   let total = 0;
   const catTotals = {};
 
-  data.forEach(item => {
+  monthExpenses.forEach(item => {
     const bedrag = parseFloat(item.bedrag);
     total += bedrag;
     catTotals[item.categorie] = (catTotals[item.categorie] || 0) + bedrag;
@@ -155,7 +158,13 @@ async function loadMonthOverview() {
   const catList = document.getElementById('maand-categories-list');
   catList.innerHTML = '';
 
-  Object.keys(catTotals).sort().forEach(cat => {
+  const categories = Object.keys(catTotals).sort();
+  if (categories.length === 0) {
+    catList.innerHTML = '<div class="row-item"><span>Geen gegevens voor deze maand.</span></div>';
+    return;
+  }
+
+  categories.forEach(cat => {
     const div = document.createElement('div');
     div.className = 'row-item';
     div.innerHTML = `<span>${cat}</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
@@ -175,50 +184,52 @@ function initYearSelect(currentYear) {
   }
 }
 
-async function loadYearOverview() {
-  const year = document.getElementById('jaar-select').value;
-  if (!year || !supabase) return;
+function loadYearOverview() {
+  const selectedYear = document.getElementById('jaar-select').value; // YYYY
+  if (!selectedYear) return;
 
-  const startDate = `${year}-01-01`;
-  const endDate = `${year}-12-31`;
-
-  const { data, error } = await supabase
-    .from('uitgaven')
-    .select('*')
-    .gte('datum', startDate)
-    .lte('datum', endDate);
-
-  if (error) return;
+  const expenses = getExpenses();
+  const yearExpenses = expenses.filter(e => e.datum.startsWith(selectedYear));
 
   let total = 0;
   const catTotals = {};
   const monthTotals = Array(12).fill(0);
 
-  data.forEach(item => {
+  yearExpenses.forEach(item => {
     const bedrag = parseFloat(item.bedrag);
     total += bedrag;
     catTotals[item.categorie] = (catTotals[item.categorie] || 0) + bedrag;
 
-    const m = new Date(item.datum).getMonth(); // 0-11
-    monthTotals[m] += bedrag;
+    // Haal maandindex op (00..11)
+    const monthIndex = parseInt(item.datum.split('-')[1], 10) - 1;
+    if (monthIndex >= 0 && monthIndex < 12) {
+      monthTotals[monthIndex] += bedrag;
+    }
   });
 
   document.getElementById('jaar-totaal-bedrag').innerText = `€ ${total.toFixed(2)}`;
 
-  // Categorieën
+  // Categorieënlijst
   const catList = document.getElementById('jaar-categories-list');
   catList.innerHTML = '';
-  Object.keys(catTotals).sort().forEach(cat => {
-    const div = document.createElement('div');
-    div.className = 'row-item';
-    div.innerHTML = `<span>${cat}</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
-    catList.appendChild(div);
-  });
+  const categories = Object.keys(catTotals).sort();
+  
+  if (categories.length === 0) {
+    catList.innerHTML = '<div class="row-item"><span>Geen gegevens voor dit jaar.</span></div>';
+  } else {
+    categories.forEach(cat => {
+      const div = document.createElement('div');
+      div.className = 'row-item';
+      div.innerHTML = `<span>${cat}</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
+      catList.appendChild(div);
+    });
+  }
 
-  // Maanden
+  // Maandenlijst
   const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
   const mList = document.getElementById('jaar-months-list');
   mList.innerHTML = '';
+  
   monthNames.forEach((name, idx) => {
     const div = document.createElement('div');
     div.className = 'row-item';
@@ -227,59 +238,51 @@ async function loadYearOverview() {
   });
 }
 
-// === VASTE LASTEN TEMPLATES BEHEER ===
-async function saveFixedTemplate(e) {
+// === VASTE LASTEN BEHEER ===
+function saveFixedTemplate(e) {
   e.preventDefault();
 
   const omschrijving = document.getElementById('fixed-omschrijving').value;
   const bedrag = parseFloat(document.getElementById('fixed-bedrag').value);
 
-  if (!supabase) return;
+  const templates = getFixedTemplates();
+  templates.push({ id: Date.now(), omschrijving, bedrag });
+  saveFixedTemplatesToStorage(templates);
 
-  const { error } = await supabase
-    .from('vaste_lasten_template')
-    .insert([{ omschrijving, bedrag }]);
-
-  if (error) {
-    alert('Fout: ' + error.message);
-  } else {
-    document.getElementById('fixed-form').reset();
-    loadFixedTemplates();
-  }
+  document.getElementById('fixed-form').reset();
+  loadFixedTemplates();
+  alert('Vaste last toegevoegd!');
 }
 
-async function loadFixedTemplates() {
-  if (!supabase) return;
-
-  const { data, error } = await supabase
-    .from('vaste_lasten_template')
-    .select('*');
-
+function loadFixedTemplates() {
+  const templates = getFixedTemplates();
   const ul = document.getElementById('fixed-templates-ul');
   ul.innerHTML = '';
 
-  if (data) {
-    data.forEach(item => {
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <div>
-          <strong>${item.omschrijving}</strong><br>
-          <small>€ ${parseFloat(item.bedrag).toFixed(2)} p/m</small>
-        </div>
-        <button class="btn-delete" onclick="deleteFixedTemplate(${item.id})">Verwijder</button>
-      `;
-      ul.appendChild(li);
-    });
+  if (templates.length === 0) {
+    ul.innerHTML = '<li style="color: #718096;">Nog geen vaste lasten ingesteld.</li>';
+    return;
   }
+
+  templates.forEach(item => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div>
+        <strong>${item.omschrijving}</strong><br>
+        <small style="color: #718096;">€ ${parseFloat(item.bedrag).toFixed(2)} p/m</small>
+      </div>
+      <button class="btn-delete" onclick="deleteFixedTemplate(${item.id})">Verwijder</button>
+    `;
+    ul.appendChild(li);
+  });
 }
 
-async function deleteFixedTemplate(id) {
+function deleteFixedTemplate(id) {
   if (!confirm('Weet je zeker dat je deze vaste last wilt verwijderen?')) return;
 
-  const { error } = await supabase
-    .from('vaste_lasten_template')
-    .delete()
-    .eq('id', id);
+  let templates = getFixedTemplates();
+  templates = templates.filter(t => t.id !== id);
+  saveFixedTemplatesToStorage(templates);
 
-  if (!error) loadFixedTemplates();
+  loadFixedTemplates();
 }
