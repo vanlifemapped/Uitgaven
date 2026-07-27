@@ -43,8 +43,13 @@ function toggleType(type) {
 
 function updateCategoryOptions() {
   const select = document.getElementById('categorie');
+  if (!select) return;
+
   select.innerHTML = '';
-  CATEGORIES[currentType].forEach(cat => {
+  
+  const categoriesToLoad = CATEGORIES[currentType] || CATEGORIES['uitgave'];
+
+  categoriesToLoad.forEach(cat => {
     const opt = document.createElement('option');
     opt.value = cat;
     opt.innerText = cat;
@@ -74,8 +79,13 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-  event.currentTarget.classList.add('active');
-  document.getElementById(`tab-${tabName}`).classList.add('active');
+  const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(
+    btn => btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${tabName}'`)
+  );
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const activeTab = document.getElementById(`tab-${tabName}`);
+  if (activeTab) activeTab.classList.add('active');
 
   if (tabName === 'invoer') loadRecentExpenses();
   if (tabName === 'maand') loadMonthOverview();
@@ -147,6 +157,7 @@ function loadRecentExpenses() {
   expenses.sort((a, b) => new Date(b.datum) - new Date(a.datum));
 
   const ul = document.getElementById('recent-expenses-ul');
+  if (!ul) return;
   ul.innerHTML = '';
 
   const recent = expenses.slice(0, 5);
@@ -178,7 +189,7 @@ function loadMonthOverview() {
   if (!selectedMonth) return;
 
   const expenses = getExpenses();
-  const monthItems = expenses.filter(e => e.datum.startsWith(selectedMonth));
+  const monthItems = expenses.filter(e => e.datum && e.datum.startsWith(selectedMonth));
 
   let totIncome = 0;
   let totExpense = 0;
@@ -186,7 +197,7 @@ function loadMonthOverview() {
 
   monthItems.forEach(item => {
     const bedrag = parseFloat(item.bedrag);
-    const itemType = item.type || 'uitgave'; // backwards compatibility
+    const itemType = item.type || 'uitgave';
 
     if (itemType === 'inkomst') {
       totIncome += bedrag;
@@ -222,6 +233,7 @@ function loadMonthOverview() {
 // === JAAR OVERZICHT ===
 function initYearSelect(currentYear) {
   const select = document.getElementById('jaar-select');
+  if (!select) return;
   select.innerHTML = '';
   for (let y = currentYear; y >= currentYear - 3; y--) {
     const opt = document.createElement('option');
@@ -236,7 +248,7 @@ function loadYearOverview() {
   if (!selectedYear) return;
 
   const expenses = getExpenses();
-  const yearItems = expenses.filter(e => e.datum.startsWith(selectedYear));
+  const yearItems = expenses.filter(e => e.datum && e.datum.startsWith(selectedYear));
 
   let totIncome = 0;
   let totExpense = 0;
@@ -308,7 +320,7 @@ function loadCharts() {
   const expenses = getExpenses();
 
   // 1. Cirkeldiagram (Uitgaven Categorieën Huidige Maand)
-  const monthExpenses = expenses.filter(e => e.datum.startsWith(selectedMonth) && (e.type || 'uitgave') === 'uitgave');
+  const monthExpenses = expenses.filter(e => e.datum && e.datum.startsWith(selectedMonth) && (e.type || 'uitgave') === 'uitgave');
   const catTotals = {};
   monthExpenses.forEach(item => {
     catTotals[item.categorie] = (catTotals[item.categorie] || 0) + parseFloat(item.bedrag);
@@ -336,7 +348,7 @@ function loadCharts() {
   });
 
   // 2. Staafdiagram (Inkomsten vs Uitgaven per Maand dit Jaar)
-  const yearItems = expenses.filter(e => e.datum.startsWith(selectedYear));
+  const yearItems = expenses.filter(e => e.datum && e.datum.startsWith(selectedYear));
   const incTotals = Array(12).fill(0);
   const expTotals = Array(12).fill(0);
 
@@ -425,6 +437,7 @@ function saveFixedTemplate(e) {
 function loadFixedTemplates() {
   const templates = getFixedTemplates();
   const ul = document.getElementById('fixed-templates-ul');
+  if (!ul) return;
   ul.innerHTML = '';
 
   if (templates.length === 0) {
