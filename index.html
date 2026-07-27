@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Reis Kosten & Inkomsten Tracker</title>
+  <title>Reis Budget Tracker</title>
   <link rel="stylesheet" href="style.css">
   
   <!-- SheetJS voor Excel Export -->
@@ -54,7 +54,16 @@
         <div class="form-group">
           <label for="categorie">Categorie</label>
           <select id="categorie" required>
-            <!-- Dynamisch gevuld via JavaScript op basis van type -->
+            <!-- Standaard opties voor direct laden -->
+            <option value="Brandstof">Brandstof</option>
+            <option value="Tol">Tol</option>
+            <option value="Wassen">Wassen</option>
+            <option value="Kingsley">Kingsley</option>
+            <option value="Terras">Terras</option>
+            <option value="Boodschappen">Boodschappen</option>
+            <option value="Kleding">Kleding</option>
+            <option value="Diversen">Diversen</option>
+            <option value="Vaste lasten">Vaste lasten</option>
           </select>
         </div>
 
