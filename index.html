@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Reis Kosten Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Supabase JS client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>Kosten Tracker</h1>
+    <nav class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('invoer')">Invoer</button>
+      <button class="tab-btn" onclick="switchTab('maand')">Maand</button>
+      <button class="tab-btn" onclick="switchTab('jaar')">Jaar</button>
+      <button class="tab-btn" onclick="switchTab('vaste-lasten')">Vaste Lasten</button>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- TAB 1: KOSTEN INVOEREN -->
+    <section id="tab-invoer" class="tab-content active">
+      <h2>Nieuwe Uitgave</h2>
+      <form id="expense-form" onsubmit="saveExpense(event)">
+        <div class="form-group">
+          <label for="datum">Datum</label>
+          <input type="date" id="datum" required>
+        </div>
+
+        <div class="form-group">
+          <label for="bedrag">Bedrag (€)</label>
+          <input type="number" id="bedrag" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required>
+        </div>
+
+        <div class="form-group">
+          <label for="categorie">Categorie</label>
+          <select id="categorie" required>
+            <option value="Brandstof">Brandstof</option>
+            <option value="Tol">Tol</option>
+            <option value="Wassen">Wassen</option>
+            <option value="Kingsley">Kingsley</option>
+            <option value="Terras">Terras</option>
+            <option value="Boodschappen">Boodschappen</option>
+            <option value="Kleding">Kleding</option>
+            <option value="Diversen">Diversen</option>
+            <option value="Vaste lasten">Vaste lasten</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="omschrijving">Omschrijving / Notitie</label>
+          <input type="text" id="omschrijving" placeholder="Bijv. Diesel getankt, Supermarkt...">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Opslaan</button>
+      </form>
+
+      <div class="recent-list">
+        <h3>Laatste uitgaven</h3>
+        <ul id="recent-expenses-ul"></ul>
+      </div>
+    </section>
+
+    <!-- TAB 2: MAAND OVERZICHT -->
+    <section id="tab-maand" class="tab-content">
+      <h2>Maandoverzicht</h2>
+      <div class="filter-group">
+        <label for="maand-select">Kies Maand:</label>
+        <input type="month" id="maand-select" onchange="loadMonthOverview()">
+      </div>
+
+      <div class="total-card">
+        <span>Totaal deze maand:</span>
+        <strong id="maand-totaal-bedrag">€ 0,00</strong>
+      </div>
+
+      <div class="category-breakdown">
+        <h3>Per Categorie</h3>
+        <div id="maand-categories-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: JAAR OVERZICHT -->
+    <section id="tab-jaar" class="tab-content">
+      <h2>Jaaroverzicht</h2>
+      <div class="filter-group">
+        <label for="jaar-select">Kies Jaar:</label>
+        <select id="jaar-select" onchange="loadYearOverview()"></select>
+      </div>
+
+      <div class="total-card">
+        <span>Totaal dit jaar:</span>
+        <strong id="jaar-totaal-bedrag">€ 0,00</strong>
+      </div>
+
+      <div class="category-breakdown">
+        <h3>Per Categorie (Jaar)</h3>
+        <div id="jaar-categories-list"></div>
+      </div>
+
+      <div class="month-breakdown">
+        <h3>Per Maand</h3>
+        <div id="jaar-months-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 4: VASTE LASTEN BEHEER -->
+    <section id="tab-vaste-lasten" class="tab-content">
+      <h2>Beheer Vaste Lasten</h2>
+      <p class="subtext">Deze posten worden elke 1e van de maand automatisch toegevoegd aan de uitgaven.</p>
+
+      <form id="fixed-form" onsubmit="saveFixedTemplate(event)">
+        <div class="form-group">
+          <label for="fixed-omschrijving">Omschrijving</label>
+          <input type="text" id="fixed-omschrijving" placeholder="Bijv. Zorgverzekering, Netflix..." required>
+        </div>
+
+        <div class="form-group">
+          <label for="fixed-bedrag">Maandelijks Bedrag (€)</label>
+          <input type="number" id="fixed-bedrag" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required>
+        </div>
+
+        <button type="submit" class="btn btn-secondary">Vaste Last Toevoegen</button>
+      </form>
+
+      <div class="fixed-templates-list">
+        <h3>Huidige sjablonen</h3>
+        <ul id="fixed-templates-ul"></ul>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
