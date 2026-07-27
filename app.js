@@ -1,20 +1,16 @@
+let pieChartInstance = null;
+let barChartInstance = null;
+
 // === INITIALISATIE ===
 document.addEventListener('DOMContentLoaded', () => {
-  // Vul de datum standaard in op vandaag
   document.getElementById('datum').valueAsDate = new Date();
 
-  // Stel standaard maand in op huidige maand (YYYY-MM)
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   document.getElementById('maand-select').value = currentMonthStr;
 
-  // Vul het jaar-keuzemenu in
   initYearSelect(now.getFullYear());
-
-  // Controleer en kopieer automatisch de vaste lasten voor de huidige maand
   checkAndCopyFixedExpenses();
-
-  // Laad de laatste uitgaven op het hoofdscherm
   loadRecentExpenses();
 });
 
@@ -46,6 +42,7 @@ function switchTab(tabName) {
   if (tabName === 'invoer') loadRecentExpenses();
   if (tabName === 'maand') loadMonthOverview();
   if (tabName === 'jaar') loadYearOverview();
+  if (tabName === 'grafieken') loadCharts();
   if (tabName === 'vaste-lasten') loadFixedTemplates();
 }
 
@@ -55,16 +52,14 @@ function checkAndCopyFixedExpenses() {
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const firstOfMonth = `${yearMonth}-01`;
 
-  // Sleutel om te onthouden of we DEZE maand al gekopieerd hebben
   const key = `fixed_applied_${yearMonth}`;
-  if (localStorage.getItem(key)) return; // Al verwerkt voor deze maand!
+  if (localStorage.getItem(key)) return;
 
   const templates = getFixedTemplates();
   if (templates.length === 0) return;
 
   const currentExpenses = getExpenses();
 
-  // Koppel elke vaste last als nieuwe uitgave voor de 1e van de maand
   templates.forEach(t => {
     currentExpenses.push({
       id: Date.now() + Math.random(),
@@ -76,10 +71,10 @@ function checkAndCopyFixedExpenses() {
   });
 
   saveExpensesToStorage(currentExpenses);
-  localStorage.setItem(key, 'true'); // Markeer als verwerkt
+  localStorage.setItem(key, 'true');
 }
 
-// === UITGAVEN INVOEREN & OMSLAAN ===
+// === UITGAVEN INVOEREN ===
 function saveExpense(e) {
   e.preventDefault();
 
@@ -108,13 +103,12 @@ function saveExpense(e) {
 
 function loadRecentExpenses() {
   const expenses = getExpenses();
-  // Sorteer op meest recente datum
   expenses.sort((a, b) => new Date(b.datum) - new Date(a.datum));
 
   const ul = document.getElementById('recent-expenses-ul');
   ul.innerHTML = '';
 
-  const recent = expenses.slice(0, 5); // Toon laatste 5
+  const recent = expenses.slice(0, 5);
 
   if (recent.length === 0) {
     ul.innerHTML = '<li style="color: #718096;">Nog geen uitgaven ingevoerd.</li>';
@@ -136,12 +130,10 @@ function loadRecentExpenses() {
 
 // === MAAND OVERZICHT ===
 function loadMonthOverview() {
-  const selectedMonth = document.getElementById('maand-select').value; // Formaat: YYYY-MM
+  const selectedMonth = document.getElementById('maand-select').value;
   if (!selectedMonth) return;
 
   const expenses = getExpenses();
-  
-  // Filter uitgaven die beginnen met YYYY-MM
   const monthExpenses = expenses.filter(e => e.datum.startsWith(selectedMonth));
 
   let total = 0;
@@ -185,7 +177,7 @@ function initYearSelect(currentYear) {
 }
 
 function loadYearOverview() {
-  const selectedYear = document.getElementById('jaar-select').value; // YYYY
+  const selectedYear = document.getElementById('jaar-select').value;
   if (!selectedYear) return;
 
   const expenses = getExpenses();
@@ -200,7 +192,6 @@ function loadYearOverview() {
     total += bedrag;
     catTotals[item.categorie] = (catTotals[item.categorie] || 0) + bedrag;
 
-    // Haal maandindex op (00..11)
     const monthIndex = parseInt(item.datum.split('-')[1], 10) - 1;
     if (monthIndex >= 0 && monthIndex < 12) {
       monthTotals[monthIndex] += bedrag;
@@ -209,11 +200,10 @@ function loadYearOverview() {
 
   document.getElementById('jaar-totaal-bedrag').innerText = `€ ${total.toFixed(2)}`;
 
-  // Categorieënlijst
   const catList = document.getElementById('jaar-categories-list');
   catList.innerHTML = '';
   const categories = Object.keys(catTotals).sort();
-  
+
   if (categories.length === 0) {
     catList.innerHTML = '<div class="row-item"><span>Geen gegevens voor dit jaar.</span></div>';
   } else {
@@ -225,17 +215,110 @@ function loadYearOverview() {
     });
   }
 
-  // Maandenlijst
   const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
   const mList = document.getElementById('jaar-months-list');
   mList.innerHTML = '';
-  
+
   monthNames.forEach((name, idx) => {
     const div = document.createElement('div');
     div.className = 'row-item';
     div.innerHTML = `<span>${name}</span><strong>€ ${monthTotals[idx].toFixed(2)}</strong>`;
     mList.appendChild(div);
   });
+}
+
+// === GRAFIEKEN ===
+function loadCharts() {
+  const selectedMonth = document.getElementById('maand-select').value || new Date().toISOString().slice(0, 7);
+  const selectedYear = document.getElementById('jaar-select').value || new Date().getFullYear().toString();
+
+  const expenses = getExpenses();
+
+  // 1. Cirkeldiagram (Categorieën Huidige Maand)
+  const monthExpenses = expenses.filter(e => e.datum.startsWith(selectedMonth));
+  const catTotals = {};
+  monthExpenses.forEach(item => {
+    catTotals[item.categorie] = (catTotals[item.categorie] || 0) + parseFloat(item.bedrag);
+  });
+
+  const pieLabels = Object.keys(catTotals);
+  const pieData = Object.values(catTotals);
+
+  const ctxPie = document.getElementById('categoryPieChart').getContext('2d');
+  if (pieChartInstance) pieChartInstance.destroy();
+
+  pieChartInstance = new Chart(ctxPie, {
+    type: 'doughnut',
+    data: {
+      labels: pieLabels.length ? pieLabels : ['Geen data'],
+      datasets: [{
+        data: pieData.length ? pieData : [1],
+        backgroundColor: [
+          '#3182ce', '#e53e3e', '#dd6b20', '#38a169', 
+          '#805ad5', '#d69e2e', '#319795', '#b83280', '#4a5568'
+        ]
+      }]
+    },
+    options: { responsive: true }
+  });
+
+  // 2. Staafdiagram (Verloop per Maand dit Jaar)
+  const yearExpenses = expenses.filter(e => e.datum.startsWith(selectedYear));
+  const monthTotals = Array(12).fill(0);
+
+  yearExpenses.forEach(item => {
+    const m = parseInt(item.datum.split('-')[1], 10) - 1;
+    if (m >= 0 && m < 12) monthTotals[m] += parseFloat(item.bedrag);
+  });
+
+  const ctxBar = document.getElementById('monthlyBarChart').getContext('2d');
+  if (barChartInstance) barChartInstance.destroy();
+
+  barChartInstance = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'],
+      datasets: [{
+        label: `Totaal Kosten ${selectedYear}`,
+        data: monthTotals,
+        backgroundColor: '#3182ce'
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+// === EXCEL EXPORT ===
+function exportToExcel() {
+  const expenses = getExpenses();
+  if (expenses.length === 0) {
+    alert('Er zijn geen gegevens om te exporteren.');
+    return;
+  }
+
+  // Sorteer op datum
+  expenses.sort((a, b) => new Date(a.datum) - new Date(b.datum));
+
+  // Maak nette rijen voor Excel
+  const excelData = expenses.map(e => ({
+    Datum: e.datum,
+    Categorie: e.categorie,
+    Omschrijving: e.omschrijving || '',
+    'Bedrag (€)': parseFloat(e.bedrag)
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Kosten');
+
+  // Genereer het bestand en download het op je telefoon
+  const filename = `Reis_Kosten_Export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  XLSX.writeFile(workbook, filename);
 }
 
 // === VASTE LASTEN BEHEER ===
