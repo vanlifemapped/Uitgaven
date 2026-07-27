@@ -1,140 +1,876 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Reis Kosten Tracker</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Supabase JS client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Verblijfslogboek</title>
+    <style>
+        :root {
+            --primary-navy: #0b3275;
+            --primary-blue: #1652f0;
+            --header-gradient: linear-gradient(180deg, #072763 0%, #0d3b8e 100%);
+            --bg-canvas: #f0f3f8;
+            --card-bg: #ffffff;
+            --text-dark: #1c2536;
+            --text-muted: #8a94a6;
+            --green-bg: #e2f7ed;
+            --green-text: #0e834e;
+            --orange-bg: #fff0e5;
+            --orange-text: #d9530f;
+            --red-num: #b91c1c;
+            --beige-btn: #f1ebd9;
+            --beige-btn-border: #e2d7be;
+            --beige-btn-text: #3d3527;
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-canvas); color: var(--text-dark);
+            padding-bottom: 40px; display: flex; justify-content: center;
+        }
+
+        .app-shell {
+            width: 100%; max-width: 480px; min-height: 100vh;
+            background-color: var(--bg-canvas); position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Header Banner */
+        .header {
+            background: var(--header-gradient); color: white;
+            padding: 20px 20px 24px 20px; position: relative; overflow: hidden;
+            border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;
+            box-shadow: 0 4px 15px rgba(7, 39, 99, 0.25);
+        }
+
+        .header-top { display: flex; align-items: center; justify-content: space-between; z-index: 2; position: relative; }
+        .title-group { display: flex; align-items: center; gap: 10px; }
+        .flag-icon { font-size: 24px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+        .app-title { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+        .app-subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.8); margin-top: 4px; font-weight: 500; }
+
+        .camper-illustration {
+            position: absolute; right: 15px; top: 15px; width: 110px; opacity: 0.22; pointer-events: none;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs-wrapper { background: white; padding: 0 10px; border-bottom: 1px solid #e5e9f0; }
+        .nav-tabs { display: flex; justify-content: space-around; }
+
+        .tab-btn {
+            flex: 1; padding: 14px 0; border: none; background: none; font-size: 14px; font-weight: 600;
+            color: #64748b; cursor: pointer; position: relative; display: flex; align-items: center;
+            justify-content: center; gap: 6px; transition: all 0.2s ease;
+        }
+
+        .tab-btn.active { color: var(--primary-navy); font-weight: 700; }
+        .tab-btn.active::after {
+            content: ''; position: absolute; bottom: 0; left: 15%; width: 70%; height: 3px;
+            background-color: var(--primary-navy); border-top-left-radius: 3px; border-top-right-radius: 3px;
+        }
+
+        .content-area { padding: 16px; }
+
+        /* Stat Grid Cards */
+        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .stat-card {
+            background: var(--card-bg); border-radius: 20px; padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); position: relative; display: flex;
+            flex-direction: column; justify-content: space-between; min-height: 110px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .card-top-icons { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .card-icon-badge {
+            width: 30px; height: 30px; border-radius: 50%; background-color: #f0f4fa;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        }
+        .card-watermark { font-size: 18px; opacity: 0.6; }
+        .card-title-text { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; }
+        .card-main-number { font-size: 28px; font-weight: 800; line-height: 1.1; margin: 3px 0; color: var(--text-dark); }
+        .card-main-number.red { color: var(--red-num); }
+        .card-main-number.orange { color: #c2410c; }
+        .card-sub-text { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+        /* Progress Card */
+        .progress-card { background: var(--card-bg); border-radius: 20px; padding: 18px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 16px; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--text-dark); }
+        .progress-track { background-color: #e5e9f0; height: 12px; border-radius: 10px; overflow: hidden; }
+        .progress-bar-fill { background-color: #b91c1c; height: 100%; border-radius: 10px; width: 0%; transition: width 0.4s ease; }
+
+        /* Sexy Action Buttons */
+        .btn-navy-action {
+            width: 100%; background: linear-gradient(135deg, #0b3275 0%, #1d4ed8 100%);
+            color: white; border: none; padding: 16px 20px; border-radius: 18px; font-size: 15px;
+            font-weight: 700; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; box-shadow: 0 6px 18px rgba(11, 50, 117, 0.28); margin-bottom: 12px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .btn-navy-action:active { transform: scale(0.98); box-shadow: 0 3px 10px rgba(11, 50, 117, 0.2); }
+
+        .grid-2-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        
+        .btn-beige-sexy {
+            background: linear-gradient(180deg, #f7f3e8 0%, #ede3cc 100%);
+            color: var(--beige-btn-text); border: 1px solid var(--beige-btn-border);
+            padding: 14px 14px; border-radius: 16px; font-size: 13px; font-weight: 700;
+            display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.15s ease;
+        }
+
+        .btn-beige-sexy:active { transform: scale(0.98); }
+
+        .backup-links { display: flex; justify-content: center; gap: 20px; margin-top: 14px; }
+        .backup-btn { background: none; border: none; font-size: 12px; color: #64748b; text-decoration: underline; cursor: pointer; font-weight: 500; }
+
+        /* Calendar Card */
+        .calendar-card { background: var(--card-bg); border-radius: 22px; padding: 18px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 8px; }
+        .cal-header-title { font-size: 17px; font-weight: 800; }
+        .cal-nav-btn { background: #f0f3f8; border: none; width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; color: #334155; }
+        .cal-grid-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; }
+        .cal-grid-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .cal-day-cell { aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #475569; cursor: pointer; position: relative; }
+        .cal-day-cell.other-month { color: #cbd5e1; }
+        .cal-day-cell.is-nl { background-color: #d8f3e5; color: #0d6b3e; font-weight: 800; }
+        .cal-day-cell.is-nl::after { content: ''; width: 4px; height: 4px; background-color: #0d6b3e; border-radius: 50%; position: absolute; bottom: 4px; }
+        .cal-day-cell.is-foreign { background-color: #ffe6d5; color: #c2410c; font-weight: 800; }
+        .cal-day-cell.is-today { border: 2.5px solid var(--primary-blue); color: var(--primary-blue); font-weight: 800; }
+        .cal-legend { display: flex; justify-content: flex-start; gap: 16px; margin-top: 20px; padding-top: 14px; border-top: 1px solid #f1f5f9; font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 4px; }
+
+        /* Logbook List */
+        .log-card-item { background: white; border-radius: 18px; padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); cursor: pointer; }
+        .log-date { font-size: 15px; font-weight: 800; color: var(--text-dark); margin-bottom: 3px; }
+        .log-location { font-size: 13px; color: #475569; font-weight: 500; }
+        .log-sub-info { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+        .pill-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .pill-nl { background-color: var(--green-bg); color: var(--green-text); }
+        .pill-foreign { background-color: var(--orange-bg); color: var(--orange-text); }
+
+        /* Bottom Sheet Modal */
+        .sheet-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(5px); display: none; align-items: flex-end; justify-content: center; z-index: 1000; }
+        .sheet-overlay.active { display: flex; }
+        .sheet-card { background: #f8fafc; border-top-left-radius: 28px; border-top-right-radius: 28px; width: 100%; max-width: 480px; padding: 12px 18px 24px 18px; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; position: relative; animation: slideUp 0.25s cubic-bezier(0, 0, 0.2, 1); }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .sheet-handle { width: 38px; height: 5px; background: #cbd5e1; border-radius: 3px; margin: 0 auto 14px auto; }
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .sheet-date-title { font-size: 18px; font-weight: 800; color: #0f172a; }
+        .btn-prev-day { background: white; border: 1.5px solid #3b82f6; color: #2563eb; padding: 6px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+        .country-toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+        .country-pill-btn { background: #e2e8f0; border: 1.5px solid transparent; padding: 14px; border-radius: 16px; font-size: 15px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+        .country-pill-btn.active-nl { background: white; border-color: #cbd5e1; color: #0f172a; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+        .country-pill-btn.active-foreign { background: white; border-color: #cbd5e1; color: #0f172a; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+        .section-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .section-label { font-size: 13px; font-weight: 700; color: #64748b; }
+        .btn-insert-location { background: white; border: 1.5px solid #3b82f6; color: #2563eb; padding: 6px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .textarea-location { width: 100%; background: white; border: 1px solid #cbd5e1; border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #1e293b; min-height: 60px; resize: none; outline: none; margin-bottom: 12px; line-height: 1.4; }
+
+        .photo-upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .photo-box-btn { background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 16px; padding: 16px 10px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .photo-box-btn span.icon { font-size: 24px; }
+        .photo-box-btn span.text { font-size: 12px; font-weight: 700; color: #64748b; }
+
+        .photo-preview-area { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+        .photo-preview-item { position: relative; width: 65px; height: 65px; border-radius: 10px; overflow: hidden; border: 1px solid #cbd5e1; flex-shrink: 0; }
+        .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-delete-badge { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        .inputs-row-2 { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; margin-bottom: 16px; }
+        .sheet-input { width: 100%; background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 10px 12px; font-size: 13px; outline: none; }
+
+        .sheet-actions-row { display: grid; grid-template-columns: 1fr 1.2fr 1.3fr; gap: 8px; margin-top: 8px; }
+        .btn-sheet-clear { background: #fff5f5; border: 1.5px solid #fca5a5; color: #dc2626; padding: 12px 6px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .btn-sheet-cancel { background: #e2e8f0; border: none; color: #475569; padding: 12px 6px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .btn-sheet-save { background: linear-gradient(135deg, #0b3275 0%, #1d4ed8 100%); border: none; color: white; padding: 12px 6px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
+
+        @media print {
+            body { background: white !important; color: black !important; }
+            .app-shell { max-width: 100% !important; box-shadow: none !important; }
+            .nav-tabs-wrapper, .btn-navy-action, .grid-2-btns, .sheet-overlay, .cal-nav-btn, .backup-links { display: none !important; }
+            .print-header-report { display: block !important; }
+            .log-card-item { border: 1px solid #ddd !important; box-shadow: none !important; break-inside: avoid; }
+            .photo-preview-area { display: flex !important; }
+        }
+
+        .print-header-report { display: none; padding: 20px; border-bottom: 2px solid #0a337a; margin-bottom: 20px; }
+    </style>
 </head>
 <body>
 
-  <header class="app-header">
-    <h1>Kosten Tracker</h1>
-    <nav class="tab-nav">
-      <button class="tab-btn active" onclick="switchTab('invoer')">Invoer</button>
-      <button class="tab-btn" onclick="switchTab('maand')">Maand</button>
-      <button class="tab-btn" onclick="switchTab('jaar')">Jaar</button>
-      <button class="tab-btn" onclick="switchTab('vaste-lasten')">Vaste Lasten</button>
-    </nav>
-  </header>
+<div class="app-shell">
+    
+    <div class="print-header-report" id="printReportHeader">
+        <h2 style="color: #0a337a; font-size: 20px;">VERBLIJFSOVERZICHT NEDERLAND (BEWIJS BRIEFADRES)</h2>
+        <p style="font-size: 12px; color: #555; margin-top: 4px;">Gegenereerd op: <span id="printDate"></span></p>
+        <div style="margin-top: 15px; font-size: 13px; line-height: 1.5;">
+            <strong>Totaal overzicht 2026:</strong><br>
+            - Dagen aantoonbaar in Nederland: <span id="printNlDays">0</span> van 122 vereist<br>
+            - Totaal ingevoerde verblijfskosten: <span id="printTotalCost">€ 0.00</span>
+        </div>
+    </div>
 
-  <main class="container">
+    <div class="header">
+        <svg class="camper-illustration" viewBox="0 0 200 120" fill="none" stroke="white" stroke-width="3">
+            <rect x="20" y="30" width="130" height="60" rx="8" />
+            <path d="M150 50 L185 60 L185 90 L150 90 Z" />
+            <rect x="35" y="42" width="30" height="22" rx="3" fill="rgba(255,255,255,0.2)" />
+            <rect x="75" y="42" width="35" height="22" rx="3" fill="rgba(255,255,255,0.2)" />
+            <circle cx="50" cy="90" r="14" fill="#072763" />
+            <circle cx="50" cy="90" r="6" fill="white" />
+            <circle cx="150" cy="90" r="14" fill="#072763" />
+            <circle cx="150" cy="90" r="6" fill="white" />
+        </svg>
 
-    <!-- TAB 1: KOSTEN INVOEREN -->
-    <section id="tab-invoer" class="tab-content active">
-      <h2>Nieuwe Uitgave</h2>
-      <form id="expense-form" onsubmit="saveExpense(event)">
-        <div class="form-group">
-          <label for="datum">Datum</label>
-          <input type="date" id="datum" required>
+        <div class="header-top">
+            <div>
+                <div class="title-group">
+                    <span class="flag-icon">🇳🇱</span>
+                    <span class="app-title">Verblijfslogboek</span>
+                </div>
+                <div class="app-subtitle" id="headerSummaryText">2026 - 0 van 122 dagen</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-tabs-wrapper">
+        <div class="nav-tabs">
+            <button class="tab-btn active" id="tab-btn-overzicht" onclick="switchTab('overzicht')">📊 Overzicht</button>
+            <button class="tab-btn" id="tab-btn-kalender" onclick="switchTab('kalender')">📅 Kalender</button>
+            <button class="tab-btn" id="tab-btn-logboek" onclick="switchTab('logboek')">📋 Logboek</button>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- TAB 1: OVERZICHT -->
+        <div id="view-overzicht">
+            <div class="grid-2x2">
+                <div class="stat-card">
+                    <div class="card-top-icons">
+                        <span class="card-icon-badge">📅</span>
+                        <span class="card-watermark">🇳🇱</span>
+                    </div>
+                    <div>
+                        <div class="card-title-text">Dagen in NL</div>
+                        <div class="card-main-number red" id="statNlDays">0</div>
+                        <div class="card-sub-text">van 122 vereist</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="card-top-icons">
+                        <span class="card-icon-badge">🌐</span>
+                        <span class="card-watermark">🌐</span>
+                    </div>
+                    <div>
+                        <div class="card-title-text">Dagen Buitenland</div>
+                        <div class="card-main-number" id="statForeignDays">0</div>
+                        <div class="card-sub-text">gelogd in 2026</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="card-top-icons">
+                        <span class="card-icon-badge">%</span>
+                        <span class="card-watermark">🇳🇱</span>
+                    </div>
+                    <div>
+                        <div class="card-title-text">Nog nodig</div>
+                        <div class="card-main-number orange" id="statNeededDays">122</div>
+                        <div class="card-sub-text">dagen te gaan</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="card-top-icons">
+                        <span class="card-icon-badge">💶</span>
+                        <span class="card-watermark">🧾</span>
+                    </div>
+                    <div>
+                        <div class="card-title-text" id="statCostMonthLabel">Maand Kosten</div>
+                        <div class="card-main-number" style="font-size: 21px;" id="statMonthCost">€ 0.00</div>
+                        <div class="card-sub-text" id="statYearCost">Jaartotaal: € 0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-card">
+                <div class="progress-header">
+                    <span>Voortgang 2026</span>
+                    <span id="statProgressPct" style="color: #b91c1c;">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+            </div>
+
+            <button class="btn-navy-action" onclick="openEntrySheet()">
+                <span>📝 Log invullen voor vandaag</span>
+                <span>›</span>
+            </button>
+
+            <!-- Sexy Secondary Action Buttons -->
+            <div class="grid-2-btns">
+                <button class="btn-beige-sexy" onclick="exportToPDF()">
+                    <span>📄 Exporteer PDF</span>
+                    <span>›</span>
+                </button>
+                <button class="btn-beige-sexy" onclick="exportToExcel()">
+                    <span>📊 Exporteer Excel</span>
+                    <span>›</span>
+                </button>
+            </div>
+
+            <div class="backup-links">
+                <button class="backup-btn" onclick="exportDataBackup()">💾 Back-up opslaan</button>
+                <button class="backup-btn" onclick="document.getElementById('importFileInput').click()">📂 Back-up laden</button>
+                <input type="file" id="importFileInput" style="display:none;" accept=".json" onchange="importDataBackup(event)">
+            </div>
         </div>
 
-        <div class="form-group">
-          <label for="bedrag">Bedrag (€)</label>
-          <input type="number" id="bedrag" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required>
+        <!-- TAB 2: KALENDER -->
+        <div id="view-kalender" style="display: none;">
+            <div class="calendar-card">
+                <div class="cal-header">
+                    <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+                    <div class="cal-header-title" id="calMonthYearLabel">Juli 2026</div>
+                    <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+                </div>
+
+                <div class="cal-grid-weekdays">
+                    <div>Ma</div><div>Di</div><div>Wo</div><div>Do</div><div>Vr</div><div>Za</div><div>Zo</div>
+                </div>
+
+                <div class="cal-grid-days" id="calDaysGrid"></div>
+
+                <div class="cal-legend">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #d8f3e5; border: 1px solid #0d6b3e;"></div>
+                        <span>In Nederland</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #ffe6d5; border: 1px solid #c2410c;"></div>
+                        <span>Buiten NL</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="border: 2px solid var(--primary-blue);"></div>
+                        <span>Vandaag</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="form-group">
-          <label for="categorie">Categorie</label>
-          <select id="categorie" required>
-            <option value="Brandstof">Brandstof</option>
-            <option value="Tol">Tol</option>
-            <option value="Wassen">Wassen</option>
-            <option value="Kingsley">Kingsley</option>
-            <option value="Terras">Terras</option>
-            <option value="Boodschappen">Boodschappen</option>
-            <option value="Kleding">Kleding</option>
-            <option value="Diversen">Diversen</option>
-            <option value="Vaste lasten">Vaste lasten</option>
-          </select>
+        <!-- TAB 3: LOGBOEK -->
+        <div id="view-logboek" style="display: none;">
+            <div id="logbookItemsContainer"></div>
         </div>
 
-        <div class="form-group">
-          <label for="omschrijving">Omschrijving / Notitie</label>
-          <input type="text" id="omschrijving" placeholder="Bijv. Diesel getankt, Supermarkt...">
+    </div>
+</div>
+
+<!-- Bottom Sheet -->
+<div class="sheet-overlay" id="entrySheet">
+    <div class="sheet-card">
+        <div class="sheet-handle"></div>
+        
+        <div class="sheet-header">
+            <div class="sheet-date-title" id="sheetDateTitle">maandag 27 juli 2026</div>
+            <button class="btn-prev-day" onclick="navigateDay(-1)">← Vorige dag</button>
         </div>
 
-        <button type="submit" class="btn btn-primary">Opslaan</button>
-      </form>
-
-      <div class="recent-list">
-        <h3>Laatste uitgaven</h3>
-        <ul id="recent-expenses-ul"></ul>
-      </div>
-    </section>
-
-    <!-- TAB 2: MAAND OVERZICHT -->
-    <section id="tab-maand" class="tab-content">
-      <h2>Maandoverzicht</h2>
-      <div class="filter-group">
-        <label for="maand-select">Kies Maand:</label>
-        <input type="month" id="maand-select" onchange="loadMonthOverview()">
-      </div>
-
-      <div class="total-card">
-        <span>Totaal deze maand:</span>
-        <strong id="maand-totaal-bedrag">€ 0,00</strong>
-      </div>
-
-      <div class="category-breakdown">
-        <h3>Per Categorie</h3>
-        <div id="maand-categories-list"></div>
-      </div>
-    </section>
-
-    <!-- TAB 3: JAAR OVERZICHT -->
-    <section id="tab-jaar" class="tab-content">
-      <h2>Jaaroverzicht</h2>
-      <div class="filter-group">
-        <label for="jaar-select">Kies Jaar:</label>
-        <select id="jaar-select" onchange="loadYearOverview()"></select>
-      </div>
-
-      <div class="total-card">
-        <span>Totaal dit jaar:</span>
-        <strong id="jaar-totaal-bedrag">€ 0,00</strong>
-      </div>
-
-      <div class="category-breakdown">
-        <h3>Per Categorie (Jaar)</h3>
-        <div id="jaar-categories-list"></div>
-      </div>
-
-      <div class="month-breakdown">
-        <h3>Per Maand</h3>
-        <div id="jaar-months-list"></div>
-      </div>
-    </section>
-
-    <!-- TAB 4: VASTE LASTEN BEHEER -->
-    <section id="tab-vaste-lasten" class="tab-content">
-      <h2>Beheer Vaste Lasten</h2>
-      <p class="subtext">Deze posten worden elke 1e van de maand automatisch toegevoegd aan de uitgaven.</p>
-
-      <form id="fixed-form" onsubmit="saveFixedTemplate(event)">
-        <div class="form-group">
-          <label for="fixed-omschrijving">Omschrijving</label>
-          <input type="text" id="fixed-omschrijving" placeholder="Bijv. Zorgverzekering, Netflix..." required>
+        <div class="country-toggle-grid">
+            <button class="country-pill-btn" id="btnPillNL" onclick="selectCountry('NL')">
+                <span>📍 In Nederland</span>
+            </button>
+            <button class="country-pill-btn" id="btnPillForeign" onclick="selectCountry('FOREIGN')">
+                <span>✈️ Buiten Nederland</span>
+            </button>
         </div>
 
-        <div class="form-group">
-          <label for="fixed-bedrag">Maandelijks Bedrag (€)</label>
-          <input type="number" id="fixed-bedrag" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required>
+        <div class="section-label-row">
+            <span class="section-label">Verslag</span>
+            <button class="btn-insert-location" onclick="fetchSmartLocation()">Locatie invoegen</button>
+        </div>
+        <textarea class="textarea-location" id="sheetLocationText" placeholder="Locatie: Straat, Plaats, Nederland"></textarea>
+
+        <span class="section-label" style="display:block; margin-bottom: 6px;">Bewijsfoto's</span>
+        <div class="photo-preview-area" id="photoPreviewContainer"></div>
+
+        <div class="photo-upload-grid">
+            <div class="photo-box-btn" onclick="document.getElementById('cameraInput').click()">
+                <span class="icon">📷</span>
+                <span class="text">Foto maken</span>
+            </div>
+            <div class="photo-box-btn" onclick="document.getElementById('galleryInput').click()">
+                <span class="icon">🖼️</span>
+                <span class="text">Uit galerij kiezen</span>
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-secondary">Vaste Last Toevoegen</button>
-      </form>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoUpload(event)">
+        <input type="file" id="galleryInput" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
 
-      <div class="fixed-templates-list">
-        <h3>Huidige sjablonen</h3>
-        <ul id="fixed-templates-ul"></ul>
-      </div>
-    </section>
+        <div class="inputs-row-2">
+            <div>
+                <span class="section-label" style="display:block; margin-bottom: 4px;">Kosten (€)</span>
+                <input type="number" step="0.01" class="sheet-input" id="sheetCostInput" placeholder="0.00">
+            </div>
+            <div>
+                <span class="section-label" style="display:block; margin-bottom: 4px;">Betalingsbewijs</span>
+                <input type="text" class="sheet-input" id="sheetPaymentInput" placeholder="bijv. Pin / Factuur">
+            </div>
+        </div>
 
-  </main>
+        <div class="sheet-actions-row">
+            <button class="btn-sheet-clear" onclick="clearCurrentEntry()">🗑️ Wis</button>
+            <button class="btn-sheet-cancel" onclick="closeEntrySheet()">Annuleer</button>
+            <button class="btn-sheet-save" onclick="saveSheetEntry()">✓ Opslaan</button>
+        </div>
+    </div>
+</div>
 
-  <script src="app.js"></script>
+<script>
+    const STORAGE_KEY = 'verblijfslogboek_v2_data';
+    let logs = {};
+    let activeDateStr = '';
+    let activeCountry = 'NL';
+    let activePhotos = [];
+
+    function loadData() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) logs = JSON.parse(raw);
+        } catch(e) {
+            console.error("Geheugen leesfout:", e);
+        }
+    }
+
+    function persistData() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+        } catch(e) {
+            alert("Let op: Opslaan in browser mislukt.");
+        }
+        renderAllViews();
+    }
+
+    let viewDate = new Date(2026, 6, 1);
+
+    function switchTab(tabKey) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('view-overzicht').style.display = 'none';
+        document.getElementById('view-kalender').style.display = 'none';
+        document.getElementById('view-logboek').style.display = 'none';
+
+        document.getElementById(`tab-btn-${tabKey}`).classList.add('active');
+        document.getElementById(`view-${tabKey}`).style.display = 'block';
+
+        if(tabKey === 'kalender') renderCalendar();
+        if(tabKey === 'logboek') renderLogbook();
+    }
+
+    function renderStats() {
+        let nlCount = 0;
+        let foreignCount = 0;
+        let monthCost = 0;
+        let totalYearCost = 0;
+
+        const currentMonthPrefix = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
+        const monthsShort = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+        Object.entries(logs).forEach(([dateKey, entry]) => {
+            if (entry.status === 'NL') nlCount++;
+            if (entry.status === 'FOREIGN') foreignCount++;
+            
+            if (entry.cost) {
+                const costVal = parseFloat(entry.cost) || 0;
+                totalYearCost += costVal;
+                if (dateKey.startsWith(currentMonthPrefix)) monthCost += costVal;
+            }
+        });
+
+        let needed = Math.max(0, 122 - nlCount);
+        let pct = Math.min(100, Math.round((nlCount / 122) * 100));
+
+        document.getElementById('statNlDays').innerText = nlCount;
+        document.getElementById('statForeignDays').innerText = foreignCount;
+        document.getElementById('statNeededDays').innerText = needed;
+        
+        document.getElementById('statCostMonthLabel').innerText = `Kosten (${monthsShort[viewDate.getMonth()]})`;
+        document.getElementById('statMonthCost').innerText = `€ ${monthCost.toFixed(2)}`;
+        document.getElementById('statYearCost').innerText = `Jaartotaal: € ${totalYearCost.toFixed(2)}`;
+
+        document.getElementById('statProgressPct').innerText = `${pct}%`;
+        document.getElementById('progressBarFill').style.width = `${pct}%`;
+        document.getElementById('headerSummaryText').innerText = `2026 - ${nlCount} van 122 dagen`;
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calDaysGrid');
+        grid.innerHTML = '';
+
+        const monthNames = ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"];
+        document.getElementById('calMonthYearLabel').innerText = `${monthNames[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+
+        let firstDayIndex = new Date(year, month, 1).getDay();
+        firstDayIndex = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+        const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDayIndex; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'cal-day-cell other-month';
+            grid.appendChild(emptyCell);
+        }
+
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        for (let day = 1; day <= totalDaysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const logEntry = logs[dateStr];
+
+            const cell = document.createElement('div');
+            cell.className = 'cal-day-cell';
+            cell.innerText = day;
+
+            if (logEntry) {
+                if (logEntry.status === 'NL') cell.classList.add('is-nl');
+                if (logEntry.status === 'FOREIGN') cell.classList.add('is-foreign');
+            }
+
+            if (dateStr === todayStr) cell.classList.add('is-today');
+
+            cell.onclick = () => openEntrySheet(dateStr);
+            grid.appendChild(cell);
+        }
+        
+        renderStats();
+    }
+
+    function changeMonth(delta) {
+        viewDate.setMonth(viewDate.getMonth() + delta);
+        renderCalendar();
+    }
+
+    function renderLogbook() {
+        const container = document.getElementById('logbookItemsContainer');
+        container.innerHTML = '';
+
+        const sortedDates = Object.keys(logs).sort().reverse();
+
+        if (sortedDates.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 40px 20px;">Geen logboekregels aanwezig.<br>Klik op <strong>"Log invullen voor vandaag"</strong> om te beginnen.</div>`;
+            return;
+        }
+
+        const daysDutch = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+        const monthsDutch = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+        sortedDates.forEach(dateStr => {
+            const entry = logs[dateStr];
+            const d = new Date(dateStr);
+            const formattedDate = `${daysDutch[d.getDay()]} ${d.getDate()} ${monthsDutch[d.getMonth()]}`;
+
+            const item = document.createElement('div');
+            item.className = 'log-card-item';
+            item.onclick = () => openEntrySheet(dateStr);
+
+            let subInfoParts = [];
+            if (entry.cost) subInfoParts.push(`€${parseFloat(entry.cost).toFixed(2)} / nacht`);
+            if (entry.payment) subInfoParts.push(`Bewijs: ${entry.payment}`);
+            if (entry.photos && entry.photos.length > 0) subInfoParts.push(`📷 ${entry.photos.length} foto('s)`);
+
+            const badgeClass = entry.status === 'NL' ? 'pill-nl' : 'pill-foreign';
+            const statusLabel = entry.status === 'NL' ? 'In Nederland' : 'Buiten NL';
+
+            item.innerHTML = `
+                <div>
+                    <div class="log-date">${formattedDate}</div>
+                    <div class="log-location">${entry.location || 'Niet opgegeven'}</div>
+                    ${subInfoParts.length > 0 ? `<div class="log-sub-info">${subInfoParts.join(' • ')}</div>` : ''}
+                </div>
+                <div class="pill-badge ${badgeClass}">${statusLabel}</div>
+            `;
+
+            container.appendChild(item);
+        });
+    }
+
+    function selectCountry(status) {
+        activeCountry = status;
+        const btnNL = document.getElementById('btnPillNL');
+        const btnForeign = document.getElementById('btnPillForeign');
+
+        if (status === 'NL') {
+            btnNL.classList.add('active-nl');
+            btnForeign.classList.remove('active-foreign');
+        } else {
+            btnForeign.classList.add('active-foreign');
+            btnNL.classList.remove('active-nl');
+        }
+    }
+
+    function openEntrySheet(dateStr = null) {
+        activeDateStr = dateStr || new Date().toISOString().split('T')[0];
+        
+        const d = new Date(activeDateStr);
+        const daysDutch = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
+        const monthsDutch = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+        
+        document.getElementById('sheetDateTitle').innerText = `${daysDutch[d.getDay()]} ${d.getDate()} ${monthsDutch[d.getMonth()]} ${d.getFullYear()}`;
+
+        if (logs[activeDateStr]) {
+            const entry = logs[activeDateStr];
+            document.getElementById('sheetLocationText').value = entry.location || '';
+            document.getElementById('sheetCostInput').value = entry.cost || '';
+            document.getElementById('sheetPaymentInput').value = entry.payment || '';
+            activePhotos = entry.photos || [];
+            selectCountry(entry.status || 'NL');
+        } else {
+            document.getElementById('sheetLocationText').value = '';
+            document.getElementById('sheetCostInput').value = '';
+            document.getElementById('sheetPaymentInput').value = '';
+            activePhotos = [];
+            selectCountry('NL');
+        }
+
+        renderPhotoPreviews();
+        document.getElementById('entrySheet').classList.add('active');
+    }
+
+    function closeEntrySheet() {
+        document.getElementById('entrySheet').classList.remove('active');
+    }
+
+    function navigateDay(delta) {
+        const d = new Date(activeDateStr);
+        d.setDate(d.getDate() + delta);
+        openEntrySheet(d.toISOString().split('T')[0]);
+    }
+
+    function clearCurrentEntry() {
+        if (logs[activeDateStr]) {
+            delete logs[activeDateStr];
+            persistData();
+        }
+        closeEntrySheet();
+    }
+
+    function saveSheetEntry() {
+        if (!activeDateStr) return;
+
+        logs[activeDateStr] = {
+            location: document.getElementById('sheetLocationText').value,
+            status: activeCountry,
+            cost: document.getElementById('sheetCostInput').value,
+            payment: document.getElementById('sheetPaymentInput').value,
+            photos: activePhotos
+        };
+
+        persistData();
+        closeEntrySheet();
+    }
+
+    function handlePhotoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxDim = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxDim) { height *= maxDim / width; width = maxDim; }
+                } else {
+                    if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                activePhotos.push(compressedDataUrl);
+                renderPhotoPreviews();
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function renderPhotoPreviews() {
+        const container = document.getElementById('photoPreviewContainer');
+        container.innerHTML = '';
+        activePhotos.forEach((src, index) => {
+            const item = document.createElement('div');
+            item.className = 'photo-preview-item';
+            item.innerHTML = `
+                <img src="${src}">
+                <div class="photo-delete-badge" onclick="removePhoto(${index})">✕</div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function removePhoto(index) {
+        activePhotos.splice(index, 1);
+        renderPhotoPreviews();
+    }
+
+    function fetchSmartLocation() {
+        const txtArea = document.getElementById('sheetLocationText');
+        if (!navigator.geolocation) {
+            alert("GPS wordt niet ondersteund.");
+            return;
+        }
+
+        txtArea.value = "Locatie ophalen...";
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
+                    const data = await res.json();
+                    
+                    if (data && data.address) {
+                        const campsite = data.address.camp_site || data.address.caravan_site || data.address.tourism || data.name || '';
+                        const road = data.address.road || data.address.pedestrian || '';
+                        const houseNum = data.address.house_number || '';
+                        const town = data.address.town || data.address.village || data.address.city || '';
+                        const country = data.address.country || 'Nederland';
+
+                        let parts = [];
+                        if (campsite && campsite !== road) parts.push(campsite);
+                        if (road) parts.push(`${road} ${houseNum}`.trim());
+                        if (town) parts.push(town);
+                        parts.push(country);
+
+                        txtArea.value = `Locatie: ${parts.join(', ')}`;
+
+                        if (data.address.country_code === 'nl') {
+                            selectCountry('NL');
+                        } else {
+                            selectCountry('FOREIGN');
+                        }
+                    } else {
+                        txtArea.value = `Locatie: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                    }
+                } catch (e) {
+                    txtArea.value = `Locatie: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                }
+            },
+            (error) => {
+                alert("GPS-locatie kon niet worden opgehaald.");
+                txtArea.value = "";
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    function exportToPDF() {
+        const sortedDates = Object.keys(logs).sort();
+        let nlCount = 0;
+        let totalCost = 0;
+
+        sortedDates.forEach(dateStr => {
+            if (logs[dateStr].status === 'NL') nlCount++;
+            if (logs[dateStr].cost) totalCost += parseFloat(logs[dateStr].cost) || 0;
+        });
+
+        document.getElementById('printDate').innerText = new Date().toLocaleDateString('nl-NL');
+        document.getElementById('printNlDays').innerText = nlCount;
+        document.getElementById('printTotalCost').innerText = `€ ${totalCost.toFixed(2)}`;
+
+        switchTab('logboek');
+        setTimeout(() => { window.print(); }, 300);
+    }
+
+    // Excel (.csv) Export Function
+    function exportToExcel() {
+        const sortedDates = Object.keys(logs).sort();
+        if (sortedDates.length === 0) {
+            alert("Er zijn nog geen verblijfsgegevens om te exporteren.");
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // Byte Order Mark for Excel encoding
+        csvContent += "Datum;Land Status;Locatie;Kosten (€);Betalingsbewijs;Aantal Fotos\n";
+
+        sortedDates.forEach(dateStr => {
+            const entry = logs[dateStr];
+            const statusLabel = entry.status === 'NL' ? 'In Nederland' : 'Buiten NL';
+            const locationText = (entry.location || '').replace(/;/g, ',');
+            const costVal = entry.cost ? parseFloat(entry.cost).toFixed(2) : '0.00';
+            const paymentText = (entry.payment || '').replace(/;/g, ',');
+            const photoCount = entry.photos ? entry.photos.length : 0;
+
+            csvContent += `${dateStr};"${statusLabel}";"${locationText}";${costVal};"${paymentText}";${photoCount}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `verblijfslogboek_2026_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportDataBackup() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `verblijfslogboek_backup_${new Date().toISOString().split('T')[0]}.json`);
+        dlAnchorElem.click();
+    }
+
+    function importDataBackup(event) {
+        const fileReader = new FileReader();
+        fileReader.onload = function(e) {
+            try {
+                const importedLogs = JSON.parse(e.target.result);
+                logs = { ...logs, ...importedLogs };
+                persistData();
+                alert("Back-up succesvol ingeladen!");
+            } catch(err) {
+                alert("Ongeldig back-up bestand.");
+            }
+        };
+        fileReader.readAsText(event.target.files[0]);
+    }
+
+    function renderAllViews() {
+        renderStats();
+        renderCalendar();
+        renderLogbook();
+    }
+
+    loadData();
+    renderAllViews();
+</script>
+
 </body>
 </html>
