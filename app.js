@@ -46,7 +46,6 @@ function updateCategoryOptions() {
   if (!select) return;
 
   select.innerHTML = '';
-  
   const categoriesToLoad = CATEGORIES[currentType] || CATEGORIES['uitgave'];
 
   categoriesToLoad.forEach(cat => {
@@ -152,6 +151,19 @@ function saveTransaction(e) {
   alert(`${currentType === 'uitgave' ? 'Uitgave' : 'Inkomst'} opgeslagen!`);
 }
 
+// === MUTATIE VERWIJDEREN ===
+function deleteTransaction(id) {
+  if (!confirm('Weet je zeker dat je deze post wilt verwijderen?')) return;
+
+  let expenses = getExpenses();
+  expenses = expenses.filter(item => item.id !== id);
+  saveExpensesToStorage(expenses);
+
+  // Ververs huidige weergave
+  loadRecentExpenses();
+  loadMonthOverview();
+}
+
 function loadRecentExpenses() {
   const expenses = getExpenses();
   expenses.sort((a, b) => new Date(b.datum) - new Date(a.datum));
@@ -175,9 +187,12 @@ function loadRecentExpenses() {
         <strong>${item.categorie}</strong> - ${item.omschrijving || 'Geen notitie'}<br>
         <small style="color: #718096;">${item.datum}</small>
       </div>
-      <strong class="${isInk ? 'tag-inkomst' : 'tag-uitgave'}">
-        ${isInk ? '+' : '-'} € ${parseFloat(item.bedrag).toFixed(2)}
-      </strong>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <strong class="${isInk ? 'tag-inkomst' : 'tag-uitgave'}">
+          ${isInk ? '+' : '-'} € ${parseFloat(item.bedrag).toFixed(2)}
+        </strong>
+        <button class="btn-delete" onclick="deleteTransaction(${item.id})">🗑️</button>
+      </div>
     `;
     ul.appendChild(li);
   });
@@ -219,14 +234,63 @@ function loadMonthOverview() {
   const categories = Object.keys(catTotals).sort();
   if (categories.length === 0) {
     catList.innerHTML = '<div class="row-item"><span>Geen uitgaven deze maand.</span></div>';
+  } else {
+    categories.forEach(cat => {
+      const div = document.createElement('div');
+      div.className = 'row-item';
+      div.innerHTML = `<span>${cat}</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
+      catList.appendChild(div);
+    });
+  }
+
+  // Toon ook de losse posten van de maand met een verwijderknop
+  loadMonthTransactionsList(monthItems);
+}
+
+function loadMonthTransactionsList(monthItems) {
+  let listContainer = document.getElementById('maand-items-list');
+  
+  // Als het element nog niet bestaat in de HTML, maken we het dynamisch aan
+  if (!listContainer) {
+    const catBreakdown = document.querySelector('#tab-maand .category-breakdown');
+    if (catBreakdown) {
+      const section = document.createElement('div');
+      section.className = 'recent-list';
+      section.style.marginTop = '24px';
+      section.innerHTML = '<h3>Alle posten deze maand</h3><ul id="maand-items-ul"></ul>';
+      catBreakdown.after(section);
+      listContainer = document.getElementById('maand-items-ul');
+    }
+  } else {
+    listContainer = document.getElementById('maand-items-ul');
+  }
+
+  if (!listContainer) return;
+  listContainer.innerHTML = '';
+
+  monthItems.sort((a, b) => new Date(b.datum) - new Date(a.datum));
+
+  if (monthItems.length === 0) {
+    listContainer.innerHTML = '<li style="color: #718096;">Geen posten gevonden voor deze maand.</li>';
     return;
   }
 
-  categories.forEach(cat => {
-    const div = document.createElement('div');
-    div.className = 'row-item';
-    div.innerHTML = `<span>${cat}</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
-    catList.appendChild(div);
+  monthItems.forEach(item => {
+    const isInk = item.type === 'inkomst';
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div>
+        <strong>${item.categorie}</strong> - ${item.omschrijving || 'Geen notitie'}<br>
+        <small style="color: #718096;">${item.datum}</small>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <strong class="${isInk ? 'tag-inkomst' : 'tag-uitgave'}">
+          ${isInk ? '+' : '-'} € ${parseFloat(item.bedrag).toFixed(2)}
+        </strong>
+        <button class="btn-delete" onclick="deleteTransaction(${item.id})">🗑️</button>
+      </div>
+    `;
+    listContainer.appendChild(li);
   });
 }
 
