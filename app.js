@@ -159,7 +159,6 @@ function deleteTransaction(id) {
   expenses = expenses.filter(item => item.id !== id);
   saveExpensesToStorage(expenses);
 
-  // Ververs huidige weergave
   loadRecentExpenses();
   loadMonthOverview();
 }
@@ -243,14 +242,12 @@ function loadMonthOverview() {
     });
   }
 
-  // Toon ook de losse posten van de maand met een verwijderknop
   loadMonthTransactionsList(monthItems);
 }
 
 function loadMonthTransactionsList(monthItems) {
   let listContainer = document.getElementById('maand-items-list');
   
-  // Als het element nog niet bestaat in de HTML, maken we het dynamisch aan
   if (!listContainer) {
     const catBreakdown = document.querySelector('#tab-maand .category-breakdown');
     if (catBreakdown) {
@@ -383,35 +380,56 @@ function loadCharts() {
 
   const expenses = getExpenses();
 
-  // 1. Cirkeldiagram (Uitgaven Categorieën Huidige Maand)
+  // 1. STAAFGRAFIEK PER CATEGORIE (Deze Maand)
   const monthExpenses = expenses.filter(e => e.datum && e.datum.startsWith(selectedMonth) && (e.type || 'uitgave') === 'uitgave');
   const catTotals = {};
+  
+  // Alle standaard categorieën als basis nemen zodat ze netjes op een rij staan
+  CATEGORIES.uitgave.forEach(cat => catTotals[cat] = 0);
+  
   monthExpenses.forEach(item => {
     catTotals[item.categorie] = (catTotals[item.categorie] || 0) + parseFloat(item.bedrag);
   });
 
-  const pieLabels = Object.keys(catTotals);
-  const pieData = Object.values(catTotals);
+  const barCatLabels = Object.keys(catTotals);
+  const barCatData = Object.values(catTotals);
 
   const ctxPie = document.getElementById('categoryPieChart').getContext('2d');
   if (pieChartInstance) pieChartInstance.destroy();
 
   pieChartInstance = new Chart(ctxPie, {
-    type: 'doughnut',
+    type: 'bar',
     data: {
-      labels: pieLabels.length ? pieLabels : ['Geen data'],
+      labels: barCatLabels,
       datasets: [{
-        data: pieData.length ? pieData : [1],
-        backgroundColor: [
-          '#3182ce', '#e53e3e', '#dd6b20', '#38a169', 
-          '#805ad5', '#d69e2e', '#319795', '#b83280', '#4a5568'
-        ]
+        label: 'Uitgaven in €',
+        data: barCatData,
+        backgroundColor: '#3182ce',
+        borderRadius: 4
       }]
     },
-    options: { responsive: true }
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) { return '€ ' + value; }
+          }
+        },
+        x: {
+          ticks: {
+            font: { size: 10 }
+          }
+        }
+      }
+    }
   });
 
-  // 2. Staafdiagram (Inkomsten vs Uitgaven per Maand dit Jaar)
+  // 2. STAAFGRAFIEK INKOMSTEN VS UITGAVEN PER MAAND (Dit Jaar)
   const yearItems = expenses.filter(e => e.datum && e.datum.startsWith(selectedYear));
   const incTotals = Array(12).fill(0);
   const expTotals = Array(12).fill(0);
@@ -438,19 +456,26 @@ function loadCharts() {
         {
           label: 'Inkomsten',
           data: incTotals,
-          backgroundColor: '#38a169'
+          backgroundColor: '#38a169',
+          borderRadius: 4
         },
         {
           label: 'Uitgaven',
           data: expTotals,
-          backgroundColor: '#e53e3e'
+          backgroundColor: '#e53e3e',
+          borderRadius: 4
         }
       ]
     },
     options: {
       responsive: true,
       scales: {
-        y: { beginAtZero: true }
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) { return '€ ' + value; }
+          }
+        }
       }
     }
   });
