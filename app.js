@@ -1,9 +1,9 @@
 let pieChartInstance = null;
 let barChartInstance = null;
 
-// Categorieën per type
+// Categorieën per type (inclusief Overnachtingen)
 const CATEGORIES = {
-  uitgave: ['Brandstof', 'Tol', 'Wassen', 'Kingsley', 'Terras', 'Boodschappen', 'Kleding', 'Diversen', 'Vaste lasten'],
+  uitgave: ['Brandstof', 'Tol', 'Wassen', 'Kingsley', 'Terras', 'Boodschappen', 'Kleding', 'Overnachtingen', 'Diversen', 'Vaste lasten'],
   inkomst: ['Salaris', 'Verhuur', 'Freelance', 'Rendement', 'Diversen inkomsten']
 };
 
@@ -384,7 +384,7 @@ function loadCharts() {
   const monthExpenses = expenses.filter(e => e.datum && e.datum.startsWith(selectedMonth) && (e.type || 'uitgave') === 'uitgave');
   const catTotals = {};
   
-  // Alle standaard categorieën als basis nemen zodat ze netjes op een rij staan
+  // Alle standaard categorieën als basis nemen
   CATEGORIES.uitgave.forEach(cat => catTotals[cat] = 0);
   
   monthExpenses.forEach(item => {
