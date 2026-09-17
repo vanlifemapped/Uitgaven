@@ -1,7 +1,7 @@
 let pieChartInstance = null;
 let barChartInstance = null;
 
-// Categorieën per type (inclusief Overnachtingen)
+// Categorieën per type
 const CATEGORIES = {
   uitgave: ['Brandstof', 'Tol', 'Wassen', 'Kingsley', 'Terras', 'Boodschappen', 'Kleding', 'Overnachtingen', 'Diversen', 'Vaste lasten'],
   inkomst: ['Salaris', 'Verhuur', 'Freelance', 'Rendement', 'Diversen inkomsten']
@@ -133,7 +133,7 @@ function saveTransaction(e) {
 
   const newTransaction = {
     id: Date.now(),
-    type: currentType, // 'uitgave' of 'inkomst'
+    type: currentType,
     datum,
     bedrag,
     categorie,
@@ -146,7 +146,7 @@ function saveTransaction(e) {
 
   document.getElementById('expense-form').reset();
   document.getElementById('datum').valueAsDate = new Date();
-  toggleType('uitgave'); // Terug naar uitgave als standaard
+  toggleType('uitgave');
   loadRecentExpenses();
   alert(`${currentType === 'uitgave' ? 'Uitgave' : 'Inkomst'} opgeslagen!`);
 }
@@ -161,6 +161,7 @@ function deleteTransaction(id) {
 
   loadRecentExpenses();
   loadMonthOverview();
+  closeCategoryModal(); // Sluit modal mocht deze open staan
 }
 
 function loadRecentExpenses() {
@@ -197,7 +198,7 @@ function loadRecentExpenses() {
   });
 }
 
-// === MAAND OVERZICHT ===
+// === MAAND OVERZICHT & KLIKBARE CATEGORIEËN ===
 function loadMonthOverview() {
   const selectedMonth = document.getElementById('maand-select').value;
   if (!selectedMonth) return;
@@ -236,13 +237,57 @@ function loadMonthOverview() {
   } else {
     categories.forEach(cat => {
       const div = document.createElement('div');
-      div.className = 'row-item';
-      div.innerHTML = `<span>${cat}</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
+      div.className = 'row-item clickable-category';
+      div.setAttribute('title', 'Klik om posten te bekijken');
+      div.onclick = () => showCategoryDetails(selectedMonth, cat);
+      div.innerHTML = `<span>📂 ${cat} 🔍</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
       catList.appendChild(div);
     });
   }
 
   loadMonthTransactionsList(monthItems);
+}
+
+// Open de modal met alle posten van een specifieke categorie in die maand
+function showCategoryDetails(yearMonth, categoryName) {
+  const expenses = getExpenses();
+  // Filter op de gekozen maand én categorie
+  const filtered = expenses.filter(e => e.datum && e.datum.startsWith(yearMonth) && e.categorie === categoryName && (e.type || 'uitgave') === 'uitgave');
+  
+  filtered.sort((a, b) => new Date(b.datum) - new Date(a.datum));
+
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalBody');
+
+  modalTitle.innerText = `${categoryName} (${yearMonth})`;
+  
+  if (filtered.length === 0) {
+    modalBody.innerHTML = '<p style="color: #718096; text-align: center; padding: 20px;">Geen posten gevonden in deze categorie voor deze maand.</p>';
+  } else {
+    let html = '<ul class="modal-items-list">';
+    filtered.forEach(item => {
+      html += `
+        <li>
+          <div>
+            <strong>${item.omschrijving || 'Geen notitie'}</strong><br>
+            <small style="color: #718096;">📅 ${item.datum}</small>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <strong class="tag-uitgave">- € ${parseFloat(item.bedrag).toFixed(2)}</strong>
+            <button class="btn-delete" onclick="deleteTransaction(${item.id})">🗑️</button>
+          </div>
+        </li>
+      `;
+    });
+    html += '</ul>';
+    modalBody.innerHTML = html;
+  }
+
+  document.getElementById('categoryModal').style.display = 'flex';
+}
+
+function closeCategoryModal() {
+  document.getElementById('categoryModal').style.display = 'none';
 }
 
 function loadMonthTransactionsList(monthItems) {
@@ -338,7 +383,6 @@ function loadYearOverview() {
   document.getElementById('jaar-uitgaven-bedrag').innerText = `€ ${totExpense.toFixed(2)}`;
   document.getElementById('jaar-saldo-bedrag').innerText = `€ ${saldo.toFixed(2)}`;
 
-  // Categorieën
   const catList = document.getElementById('jaar-categories-list');
   catList.innerHTML = '';
   const categories = Object.keys(catTotals).sort();
@@ -354,7 +398,6 @@ function loadYearOverview() {
     });
   }
 
-  // Maanden (Netto verloop)
   const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
   const mList = document.getElementById('jaar-months-list');
   mList.innerHTML = '';
@@ -380,11 +423,9 @@ function loadCharts() {
 
   const expenses = getExpenses();
 
-  // 1. STAAFGRAFIEK PER CATEGORIE (Deze Maand)
   const monthExpenses = expenses.filter(e => e.datum && e.datum.startsWith(selectedMonth) && (e.type || 'uitgave') === 'uitgave');
   const catTotals = {};
   
-  // Alle standaard categorieën als basis nemen
   CATEGORIES.uitgave.forEach(cat => catTotals[cat] = 0);
   
   monthExpenses.forEach(item => {
@@ -429,7 +470,6 @@ function loadCharts() {
     }
   });
 
-  // 2. STAAFGRAFIEK INKOMSTEN VS UITGAVEN PER MAAND (Dit Jaar)
   const yearItems = expenses.filter(e => e.datum && e.datum.startsWith(selectedYear));
   const incTotals = Array(12).fill(0);
   const expTotals = Array(12).fill(0);
