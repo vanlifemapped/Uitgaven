@@ -200,12 +200,26 @@ h2 {
   color: white;
 }
 
+/* Valuta toggle rij passend gemaakt voor mobiel */
+.currency-box {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 14px;
+}
 .currency-toggle-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-top: 10px;
+}
+.currency-label-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .form-group { margin-bottom: 12px; }
@@ -341,6 +355,7 @@ ul li {
   justify-content: center;
   align-items: center;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .filter-group {
