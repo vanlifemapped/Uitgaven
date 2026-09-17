@@ -33,7 +33,7 @@ function toggleType(type) {
   
   if (type === 'uitgave') {
     btn.innerText = 'Uitgave Opslaan';
-    btn.style.backgroundColor = 'var(--primary)';
+    btn.style.backgroundColor = 'var(--danger)';
     if (quickCats) quickCats.style.display = 'block';
   } else {
     btn.innerText = 'Inkomst Opslaan';
@@ -104,7 +104,7 @@ function saveFixedTemplatesToStorage(templates) {
   localStorage.setItem('reis_vaste_lasten', JSON.stringify(templates));
 }
 
-// Tab navigatie (gecorrigeerd)
+// Tab navigatie
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
