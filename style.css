@@ -200,7 +200,7 @@ h2 {
   color: white;
 }
 
-/* Valuta toggle rij passend gemaakt voor mobiel */
+/* Strakke valuta-box met veilige flex-uitlijning */
 .currency-box {
   background: #f8fafc;
   padding: 12px;
@@ -211,15 +211,22 @@ h2 {
 .currency-toggle-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 8px;
+}
+.currency-toggle-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 .currency-label-text {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-main);
   cursor: pointer;
-  white-space: nowrap;
+  margin: 0;
 }
 
 .form-group { margin-bottom: 12px; }
