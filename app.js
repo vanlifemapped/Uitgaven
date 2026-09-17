@@ -514,7 +514,7 @@ function loadCharts() {
       datasets: [{
         label: 'Uitgaven in €',
         data: barCatData,
-        backgroundColor: 'var(--primary)',
+        backgroundColor: '#dc2626', // Rood voor uitgaven grafiek
         borderRadius: 4
       }]
     },
@@ -554,8 +554,8 @@ function loadCharts() {
     data: {
       labels: ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'],
       datasets: [
-        { label: 'Inkomsten', data: incTotals, backgroundColor: 'var(--success)', borderRadius: 4 },
-        { label: 'Uitgaven', data: expTotals, backgroundColor: 'var(--danger)', borderRadius: 4 }
+        { label: 'Inkomsten', data: incTotals, backgroundColor: '#16a34a', borderRadius: 4 }, // Groen
+        { label: 'Uitgaven', data: expTotals, backgroundColor: '#dc2626', borderRadius: 4 }  // Rood
       ]
     },
     options: {
@@ -675,7 +675,7 @@ function loadFixedTemplates() {
         <strong>${item.omschrijving}</strong><br>
         <small style="color: var(--text-muted);">€ ${parseFloat(item.bedrag).toFixed(2)} p/m</small>
       </div>
-      <button class="btn-delete" onclick="deleteFixedTemplate(${item.id})">Verwijder</button>
+      <button class="btn-delete" onclick="deleteFixedTemplate(${item.id})">🗑️</button>
     `;
     ul.appendChild(li);
   });
