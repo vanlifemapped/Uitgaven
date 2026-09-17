@@ -8,7 +8,7 @@
   <!-- Web App Metadata & Icoontjes (PWA) -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.png">
-  <meta name="theme-color" content="#1a365d">
+  <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Budget Tracker">
@@ -30,17 +30,18 @@
       <button class="tab-btn" onclick="switchTab('jaar')">Jaar</button>
       <button class="tab-btn" onclick="switchTab('grafieken')">Grafieken</button>
       <button class="tab-btn" onclick="switchTab('vaste-lasten')">Vaste Lasten</button>
+      <button class="tab-btn" onclick="switchTab('backup')">Backup</button>
     </nav>
   </header>
 
   <main class="container">
 
-    <!-- TAB 1: INVOEREN (UITGAVE / INKOMST) -->
+    <!-- TAB 1: INVOEREN -->
     <section id="tab-invoer" class="tab-content active">
       <h2>Boeking Invoeren</h2>
       <form id="expense-form" onsubmit="saveTransaction(event)">
         
-        <!-- Type Keuze: Uitgave of Inkomst -->
+        <!-- Type Keuze -->
         <div class="type-selector">
           <label class="type-btn active" id="type-uitgave-label">
             <input type="radio" name="trans-type" value="uitgave" checked onchange="toggleType('uitgave')"> Uitgave
@@ -50,26 +51,55 @@
           </label>
         </div>
 
+        <!-- Snelle Categorie Knoppen (alleen bij uitgave handig) -->
+        <div class="quick-cats" id="quick-cats-container">
+          <span class="quick-label">Snel kiezen:</span>
+          <div class="quick-chips">
+            <button type="button" class="chip" onclick="selectQuickCat('Brandstof')">⛽ Brandstof</button>
+            <button type="button" class="chip" onclick="selectQuickCat('Boodschappen')">🛒 Boodschappen</button>
+            <button type="button" class="chip" onclick="selectQuickCat('Overnachtingen')">⛺ Overnachtingen</button>
+            <button type="button" class="chip" onclick="selectQuickCat('Uitstapjes')">🎟️ Uitstapjes</button>
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="datum">Datum</label>
           <input type="date" id="datum" required>
         </div>
 
-        <div class="form-group">
-          <label for="bedrag">Bedrag (€)</label>
-          <input type="number" id="bedrag" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required>
+        <!-- Valuta Optie -->
+        <div class="currency-box">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="bedrag">Bedrag (€)</label>
+            <input type="number" id="bedrag" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required oninput="calculateCurrency()">
+          </div>
+          <div class="currency-toggle-row">
+            <input type="checkbox" id="use-foreign-currency" onchange="toggleCurrencyMode()">
+            <label for="use-foreign-currency" style="font-size: 0.8rem; margin:0; cursor:pointer;">Betaald in vreemde valuta?</label>
+          </div>
+        </div>
+
+        <div id="foreign-currency-fields" style="display: none; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 14px; border: 1px dashed var(--border-color);">
+          <div style="display: flex; gap: 8px;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label for="vreemd-bedrag">Bedrag lokaal</label>
+              <input type="number" id="vreemd-bedrag" step="0.01" min="0" placeholder="0.00" inputmode="decimal" oninput="calculateCurrency()">
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label for="wisselkoers">Koers (1€ = ...)</label>
+              <input type="number" id="wisselkoers" step="0.0001" min="0" placeholder="bijv. 7.5" inputmode="decimal" oninput="calculateCurrency()">
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
           <label for="categorie">Categorie</label>
-          <select id="categorie" required>
-            <!-- Wordt dynamisch geladen vanuit app.js -->
-          </select>
+          <select id="categorie" required></select>
         </div>
 
         <div class="form-group">
           <label for="omschrijving">Omschrijving / Notitie</label>
-          <input type="text" id="omschrijving" placeholder="Bijv. Camping, Diesel, Supermarkt...">
+          <input type="text" id="omschrijving" placeholder="Bijv. Camping, Supermarkt...">
         </div>
 
         <button type="submit" class="btn btn-primary" id="save-btn">Uitgave Opslaan</button>
@@ -84,11 +114,25 @@
     <!-- TAB 2: MAAND OVERZICHT -->
     <section id="tab-maand" class="tab-content">
       <h2>Maandoverzicht</h2>
-      <p class="subtext" style="font-size: 0.85rem; color: #718096; margin-bottom: 15px;">💡 Klik op een categorie hieronder om alle posten van die categorie in te zien.</p>
+      <p class="subtext">💡 Klik op een categorie om alle bijbehorende posten in te zien.</p>
       
       <div class="filter-group">
         <label for="maand-select">Kies Maand:</label>
         <input type="month" id="maand-select" onchange="loadMonthOverview()">
+      </div>
+
+      <!-- Budget Voortgangsbar -->
+      <div class="budget-card">
+        <div class="budget-header">
+          <span>Maandbudget Doel</span>
+          <span id="budget-status-text">€ 0 / € 0</span>
+        </div>
+        <div class="progress-bar-container">
+          <div id="budget-progress-bar" class="progress-bar" style="width: 0%;"></div>
+        </div>
+        <div class="budget-input-row">
+          <input type="number" id="maand-budget-input" placeholder="Stel budget in (€)" min="0" step="10" onchange="saveMonthBudget()">
+        </div>
       </div>
 
       <div class="summary-cards">
@@ -165,15 +209,15 @@
       </div>
     </section>
 
-    <!-- TAB 5: VASTE LASTEN BEHEER -->
+    <!-- TAB 5: VASTE LASTEN -->
     <section id="tab-vaste-lasten" class="tab-content">
       <h2>Beheer Vaste Lasten</h2>
-      <p class="subtext">Deze posten worden elke 1e van de maand automatisch toegevoegd aan de uitgaven.</p>
+      <p class="subtext">Worden elke 1e van de maand automatisch toegevoegd.</p>
 
       <form id="fixed-form" onsubmit="saveFixedTemplate(event)">
         <div class="form-group">
           <label for="fixed-omschrijving">Omschrijving</label>
-          <input type="text" id="fixed-omschrijving" placeholder="Bijv. Zorgverzekering, Netflix..." required>
+          <input type="text" id="fixed-omschrijving" placeholder="Bijv. Zorgverzekering..." required>
         </div>
 
         <div class="form-group">
@@ -190,18 +234,36 @@
       </div>
     </section>
 
+    <!-- TAB 6: BACKUP & HERSTEL -->
+    <section id="tab-backup" class="tab-content">
+      <h2>Data Backup & Herstel</h2>
+      <p class="subtext">Maak een volledige reservekopie van al je gegevens, of zet een eerdere kopie terug op dit apparaat.</p>
+
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--text-muted);">1. Reservekopie downloaden</h3>
+        <button type="button" class="btn btn-primary" onclick="exportJSONBackup()">💾 Download Backupbestand</button>
+      </div>
+
+      <div>
+        <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--text-muted);">2. Reservekopie terugzetten</h3>
+        <div class="form-group">
+          <label for="import-file">Selecteer backup (.json)</label>
+          <input type="file" id="import-file" accept=".json" style="padding: 8px;">
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="importJSONBackup()">📂 Backup Inlezen & Herstellen</button>
+      </div>
+    </section>
+
   </main>
 
-  <!-- POPUP / MODAL VOOR CATEGORIE DETAIL WEERGAVE -->
+  <!-- POPUP / MODAL -->
   <div id="categoryModal" class="modal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
         <h3 id="modalTitle">Categorie Details</h3>
         <button class="modal-close" onclick="closeCategoryModal()">&times;</button>
       </div>
-      <div id="modalBody" class="modal-body">
-        <!-- Wordt dynamisch gevuld -->
-      </div>
+      <div id="modalBody" class="modal-body"></div>
     </div>
   </div>
 
