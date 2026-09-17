@@ -1,12 +1,12 @@
 :root {
-  --primary: #2563eb;         /* Modern koningsblauw */
+  --primary: #2563eb;
   --primary-hover: #1d4ed8;
-  --success: #16a34a;         /* Fris groen voor inkomsten */
-  --danger: #dc2626;          /* Helder rood voor uitgaven */
-  --bg-app: #f1f5f9;          /* Zachte, moderne achtergrond */
+  --success: #16a34a;
+  --danger: #dc2626;
+  --bg-app: #f1f5f9;
   --card-bg: #ffffff;
-  --text-main: #1e293b;       /* Donkergrijs voor leesbaarheid */
-  --text-muted: #64748b;      /* Subtiel grijs voor toelichtingen */
+  --text-main: #1e293b;
+  --text-muted: #64748b;
   --border-color: #e2e8f0;
   --radius: 12px;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
@@ -26,7 +26,6 @@ body {
   padding-bottom: 50px;
 }
 
-/* Strakke App Header & Navigatie */
 .app-header {
   background: linear-gradient(135deg, #1e3a8a, #2563eb);
   color: white;
@@ -42,7 +41,6 @@ body {
   font-weight: 700;
   margin-bottom: 12px;
   text-align: center;
-  letter-spacing: -0.01em;
 }
 
 .tab-nav {
@@ -50,12 +48,10 @@ body {
   gap: 6px;
   overflow-x: auto;
   padding-bottom: 4px;
-  scrollbar-width: none; /* Verberg scrollbar voor strakke look */
+  scrollbar-width: none;
 }
 
-.tab-nav::-webkit-scrollbar {
-  display: none;
-}
+.tab-nav::-webkit-scrollbar { display: none; }
 
 .tab-btn {
   background: rgba(255, 255, 255, 0.12);
@@ -76,7 +72,6 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Container & Tabs */
 .container {
   max-width: 540px;
   margin: 16px auto;
@@ -92,9 +87,7 @@ body {
   animation: fadeIn 0.25s ease-in-out;
 }
 
-.tab-content.active {
-  display: block;
-}
+.tab-content.active { display: block; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
@@ -114,7 +107,74 @@ h2 {
   margin-bottom: 16px;
 }
 
-/* Moderne Type Selector (Uitgave / Inkomst) */
+/* Snelle categorie chips */
+.quick-cats {
+  margin-bottom: 14px;
+}
+.quick-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.quick-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.chip {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: var(--primary);
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip:hover {
+  background: #dbeafe;
+}
+
+/* Budget Card */
+.budget-card {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.budget-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.progress-bar-container {
+  width: 100%;
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--success);
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+.budget-input-row input {
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+/* Type Selector */
 .type-selector {
   display: flex;
   background: #f1f5f9;
@@ -133,12 +193,9 @@ h2 {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-muted);
-  transition: all 0.2s;
 }
 
-.type-btn input {
-  display: none;
-}
+.type-btn input { display: none; }
 
 .type-btn.active#type-uitgave-label {
   background: var(--danger);
@@ -152,11 +209,15 @@ h2 {
   box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
 }
 
-/* Formulieren */
-.form-group {
-  margin-bottom: 16px;
+.currency-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 14px;
 }
 
+.form-group { margin-bottom: 14px; }
 .form-group label {
   display: block;
   font-size: 0.8rem;
@@ -175,7 +236,6 @@ input, select {
   font-size: 1rem;
   background-color: #f8fafc;
   color: var(--text-main);
-  transition: border-color 0.2s, background-color 0.2s;
 }
 
 input:focus, select:focus {
@@ -184,7 +244,6 @@ input:focus, select:focus {
   background-color: #ffffff;
 }
 
-/* Knoppen */
 .btn {
   width: 100%;
   padding: 14px;
@@ -194,27 +253,14 @@ input:focus, select:focus {
   font-weight: 600;
   cursor: pointer;
   color: white;
-  transition: transform 0.1s, background-color 0.2s;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.btn:active {
-  transform: scale(0.98);
 }
 
 .btn-primary { background-color: var(--primary); }
 .btn-primary:hover { background-color: var(--primary-hover); }
-
 .btn-secondary { background-color: #475569; }
-.btn-secondary:hover { background-color: #334155; }
+.btn-export { background-color: #0d9488; margin-top: 24px; }
 
-.btn-export {
-  background-color: #0d9488; /* Strak turquoise/groen voor export */
-  margin-top: 24px;
-}
-.btn-export:hover { background-color: #0f766e; }
-
-/* Overzichtskaarten (Dashboard / Saldo) */
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -239,16 +285,11 @@ input:focus, select:focus {
   margin-bottom: 4px;
 }
 
-.card strong {
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
+.card strong { font-size: 0.9rem; font-weight: 700; }
 .card-income strong { color: var(--success); }
 .card-expense strong { color: var(--danger); }
 .card-net strong { color: var(--primary); }
 
-/* Categorie Lijsten & Rijen */
 .category-breakdown, .recent-list, .month-breakdown, .fixed-templates-list {
   margin-top: 24px;
 }
@@ -277,24 +318,14 @@ input:focus, select:focus {
   border: 1px solid #f1f5f9;
 }
 
-/* Klikbare Categorieën */
-.clickable-category {
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
+.clickable-category { cursor: pointer; }
 .clickable-category:hover {
   background-color: #eff6ff;
   border-color: #bfdbfe;
   color: var(--primary);
-  transform: translateX(2px);
 }
 
-/* Lijsten met mutaties */
-ul {
-  list-style: none;
-}
-
+ul { list-style: none; }
 ul li {
   background: #f8fafc;
   padding: 12px 14px;
@@ -320,12 +351,6 @@ ul li {
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
-}
-
-.btn-delete:hover {
-  background: #fecaca;
 }
 
 .filter-group {
@@ -338,21 +363,18 @@ ul li {
   border-radius: 10px;
   border: 1px solid var(--border-color);
 }
-
 .filter-group label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
-/* Grafieken Box */
 .chart-box {
   background: #f8fafc;
   padding: 16px;
   border-radius: 10px;
   border: 1px solid var(--border-color);
 }
-
 .chart-box h3 {
   font-size: 0.85rem;
   font-weight: 700;
@@ -362,13 +384,10 @@ ul li {
   text-align: center;
 }
 
-/* Strakke Popup / Modal */
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
@@ -377,64 +396,28 @@ ul li {
   z-index: 1000;
   padding: 16px;
 }
-
 .modal-content {
   background: white;
-  width: 100%;
-  max-width: 480px;
-  max-height: 80vh;
+  width: 100%; max-width: 480px; max-height: 80vh;
   border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex; flex-direction: column;
   overflow: hidden;
-  animation: modalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-@keyframes modalScale {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
 .modal-header {
   padding: 16px 20px;
   background: #1e3a8a;
   color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: flex; justify-content: space-between; align-items: center;
 }
-
-.modal-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
-}
-
+.modal-header h3 { font-size: 1rem; font-weight: 600; margin: 0; }
 .modal-close {
   background: rgba(255,255,255,0.2);
-  border: none;
-  color: white;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  font-size: 1.1rem;
+  border: none; color: white;
+  width: 28px; height: 28px; border-radius: 50%;
   cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  line-height: 1;
 }
-
-.modal-body {
-  padding: 16px;
-  overflow-y: auto;
-}
-
+.modal-body { padding: 16px; overflow-y: auto; }
 .modal-items-list li {
   padding: 10px 0;
   border-bottom: 1px solid var(--border-color);
-}
-.modal-items-list li:last-child {
-  border-bottom: none;
 }
