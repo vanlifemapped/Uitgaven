@@ -68,15 +68,15 @@
           <input type="date" id="datum" required>
         </div>
 
-        <!-- Valuta Optie -->
+        <!-- Valuta Optie (Netjes gefixeerd) -->
         <div class="currency-box">
-          <div class="form-group" style="margin-bottom: 0;">
+          <div class="form-group" style="margin-bottom: 8px;">
             <label for="bedrag">Bedrag (€)</label>
             <input type="number" id="bedrag" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required oninput="calculateCurrency()">
           </div>
           <div class="currency-toggle-row">
             <input type="checkbox" id="use-foreign-currency" onchange="toggleCurrencyMode()">
-            <label for="use-foreign-currency" class="currency-label-text">Vreemde valuta?</label>
+            <label for="use-foreign-currency" class="currency-label-text">Betaald in vreemde valuta</label>
           </div>
         </div>
 
