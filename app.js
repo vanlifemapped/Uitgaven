@@ -1,6 +1,7 @@
 let pieChartInstance = null;
 let barChartInstance = null;
 
+// Categorieën per type
 const CATEGORIES = {
   uitgave: ['Brandstof', 'Autokosten', 'Wassen', 'Kingsley', 'Terras', 'Boodschappen', 'Kleding', 'Overnachtingen', 'Uitstapjes', 'Diversen', 'Vaste lasten'],
   inkomst: ['Salaris', 'Verhuur', 'Freelance', 'Rendement', 'Diversen inkomsten']
@@ -8,6 +9,7 @@ const CATEGORIES = {
 
 let currentType = 'uitgave';
 
+// === INITIALISATIE ===
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('datum').valueAsDate = new Date();
 
@@ -19,26 +21,21 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCategoryOptions();
   checkAndCopyFixedExpenses();
   loadRecentExpenses();
-  loadMonthBudgetSetting();
 });
 
-// Switch tussen Uitgave & Inkomst
+// Switch tussen Uitgave & Inkomst in het formulier
 function toggleType(type) {
   currentType = type;
   document.getElementById('type-uitgave-label').classList.toggle('active', type === 'uitgave');
   document.getElementById('type-inkomst-label').classList.toggle('active', type === 'inkomst');
   
   const btn = document.getElementById('save-btn');
-  const quickCats = document.getElementById('quick-cats-container');
-  
   if (type === 'uitgave') {
     btn.innerText = 'Uitgave Opslaan';
-    btn.style.backgroundColor = 'var(--primary)';
-    if (quickCats) quickCats.style.display = 'block';
+    btn.style.backgroundColor = '#3182ce';
   } else {
     btn.innerText = 'Inkomst Opslaan';
-    btn.style.backgroundColor = 'var(--success)';
-    if (quickCats) quickCats.style.display = 'none';
+    btn.style.backgroundColor = '#38a169';
   }
 
   updateCategoryOptions();
@@ -59,36 +56,7 @@ function updateCategoryOptions() {
   });
 }
 
-function selectQuickCat(catName) {
-  const select = document.getElementById('categorie');
-  if (select) {
-    select.value = catName;
-  }
-}
-
-// Wisselen valuta modus
-function toggleCurrencyMode() {
-  const isChecked = document.getElementById('use-foreign-currency').checked;
-  const fields = document.getElementById('foreign-currency-fields');
-  fields.style.display = isChecked ? 'block' : 'none';
-  calculateCurrency();
-}
-
-// Bereken automatisch euro's op basis van vreemde valuta
-function calculateCurrency() {
-  const isChecked = document.getElementById('use-foreign-currency').checked;
-  if (!isChecked) return;
-
-  const vreemdBedrag = parseFloat(document.getElementById('vreemd-bedrag').value) || 0;
-  const koers = parseFloat(document.getElementById('wisselkoers').value) || 0;
-
-  if (vreemdBedrag > 0 && koers > 0) {
-    const euroBedrag = vreemdBedrag / koers;
-    document.getElementById('bedrag').value = euroBedrag.toFixed(2);
-  }
-}
-
-// LocalStorage helpers
+// === LOCALSTORAGE HELPERS ===
 function getExpenses() {
   return JSON.parse(localStorage.getItem('reis_uitgaven') || '[]');
 }
@@ -105,13 +73,13 @@ function saveFixedTemplatesToStorage(templates) {
   localStorage.setItem('reis_vaste_lasten', JSON.stringify(templates));
 }
 
-// Tab navigatie
+// === TAB NAVIGATIE ===
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
   const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(
-    btn => btn.getAttribute('onclick') && btn.getAttribute('onclick'].includes(`'${tabName}'`)
+    btn => btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${tabName}'`)
   );
   if (activeBtn) activeBtn.classList.add('active');
 
@@ -119,16 +87,13 @@ function switchTab(tabName) {
   if (activeTab) activeTab.classList.add('active');
 
   if (tabName === 'invoer') loadRecentExpenses();
-  if (tabName === 'maand') {
-    loadMonthBudgetSetting();
-    loadMonthOverview();
-  }
+  if (tabName === 'maand') loadMonthOverview();
   if (tabName === 'jaar') loadYearOverview();
   if (tabName === 'grafieken') loadCharts();
   if (tabName === 'vaste-lasten') loadFixedTemplates();
 }
 
-// Automatisch vaste lasten kopiëren
+// === AUTOMATISCH VASTE LASTEN KOPIËREN ===
 function checkAndCopyFixedExpenses() {
   const now = new Date();
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -157,7 +122,7 @@ function checkAndCopyFixedExpenses() {
   localStorage.setItem(key, 'true');
 }
 
-// Transactie opslaan
+// === TRANSACTIE INVOEREN ===
 function saveTransaction(e) {
   e.preventDefault();
 
@@ -181,13 +146,12 @@ function saveTransaction(e) {
 
   document.getElementById('expense-form').reset();
   document.getElementById('datum').valueAsDate = new Date();
-  document.getElementById('use-foreign-currency').checked = false;
-  document.getElementById('foreign-currency-fields').style.display = 'none';
   toggleType('uitgave');
   loadRecentExpenses();
   alert(`${currentType === 'uitgave' ? 'Uitgave' : 'Inkomst'} opgeslagen!`);
 }
 
+// === MUTATIE VERWIJDEREN ===
 function deleteTransaction(id) {
   if (!confirm('Weet je zeker dat je deze post wilt verwijderen?')) return;
 
@@ -211,7 +175,7 @@ function loadRecentExpenses() {
   const recent = expenses.slice(0, 5);
 
   if (recent.length === 0) {
-    ul.innerHTML = '<li style="color: var(--text-muted);">Nog geen mutaties ingevoerd.</li>';
+    ul.innerHTML = '<li style="color: #718096;">Nog geen mutaties ingevoerd.</li>';
     return;
   }
 
@@ -221,7 +185,7 @@ function loadRecentExpenses() {
     li.innerHTML = `
       <div>
         <strong>${item.categorie}</strong> - ${item.omschrijving || 'Geen notitie'}<br>
-        <small style="color: var(--text-muted);">${item.datum}</small>
+        <small style="color: #718096;">${item.datum}</small>
       </div>
       <div style="display: flex; align-items: center; gap: 10px;">
         <strong class="${isInk ? 'tag-inkomst' : 'tag-uitgave'}">
@@ -234,30 +198,10 @@ function loadRecentExpenses() {
   });
 }
 
-// Maandbudget instellingen
-function saveMonthBudget() {
-  const selectedMonth = document.getElementById('maand-select').value;
-  const budgetVal = parseFloat(document.getElementById('maand-budget-input').value) || 0;
-  if (!selectedMonth) return;
-
-  localStorage.setItem(`budget_${selectedMonth}`, budgetVal);
-  loadMonthOverview();
-}
-
-function loadMonthBudgetSetting() {
-  const selectedMonth = document.getElementById('maand-select').value;
-  if (!selectedMonth) return;
-
-  const savedBudget = localStorage.getItem(`budget_${selectedMonth}`) || '';
-  document.getElementById('maand-budget-input').value = savedBudget;
-}
-
-// Maand overzicht & budget balk
+// === MAAND OVERZICHT & KLIKBARE CATEGORIEËN ===
 function loadMonthOverview() {
   const selectedMonth = document.getElementById('maand-select').value;
   if (!selectedMonth) return;
-
-  loadMonthBudgetSetting();
 
   const expenses = getExpenses();
   const monthItems = expenses.filter(e => e.datum && e.datum.startsWith(selectedMonth));
@@ -284,34 +228,12 @@ function loadMonthOverview() {
   document.getElementById('maand-uitgaven-bedrag').innerText = `€ ${totExpense.toFixed(2)}`;
   document.getElementById('maand-saldo-bedrag').innerText = `€ ${saldo.toFixed(2)}`;
 
-  // Budget balk berekening
-  const maxBudget = parseFloat(localStorage.getItem(`budget_${selectedMonth}`)) || 0;
-  const statusText = document.getElementById('budget-status-text');
-  const progressBar = document.getElementById('budget-progress-bar');
-
-  if (maxBudget > 0) {
-    const percentage = Math.min(Math.round((totExpense / maxBudget) * 100), 100);
-    statusText.innerText = `€ ${totExpense.toFixed(2)} / € ${maxBudget.toFixed(2)} (${percentage}%)`;
-    progressBar.style.width = `${percentage}%`;
-
-    if (percentage >= 90) {
-      progressBar.style.backgroundColor = 'var(--danger)';
-    } else if (percentage >= 75) {
-      progressBar.style.backgroundColor = '#d97706'; // Oranje
-    } else {
-      progressBar.style.backgroundColor = 'var(--success)';
-    }
-  } else {
-    statusText.innerText = `€ ${totExpense.toFixed(2)} (Geen budget ingesteld)`;
-    progressBar.style.width = '0%';
-  }
-
   const catList = document.getElementById('maand-categories-list');
   catList.innerHTML = '';
 
   const categories = Object.keys(catTotals).sort();
   if (categories.length === 0) {
-    catList.innerHTML = '<div class="row-item"><span style="color:var(--text-muted);">Geen uitgaven deze maand.</span></div>';
+    catList.innerHTML = '<div class="row-item"><span>Geen uitgaven deze maand.</span></div>';
   } else {
     categories.forEach(cat => {
       const div = document.createElement('div');
@@ -326,6 +248,7 @@ function loadMonthOverview() {
   loadMonthTransactionsList(monthItems);
 }
 
+// Open de modal met alle posten van een specifieke categorie in die maand
 function showCategoryDetails(yearMonth, categoryName) {
   const expenses = getExpenses();
   const filtered = expenses.filter(e => e.datum && e.datum.startsWith(yearMonth) && e.categorie === categoryName && (e.type || 'uitgave') === 'uitgave');
@@ -338,7 +261,7 @@ function showCategoryDetails(yearMonth, categoryName) {
   modalTitle.innerText = `${categoryName} (${yearMonth})`;
   
   if (filtered.length === 0) {
-    modalBody.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">Geen posten gevonden in deze categorie.</p>';
+    modalBody.innerHTML = '<p style="color: #718096; text-align: center; padding: 20px;">Geen posten gevonden in deze categorie voor deze maand.</p>';
   } else {
     let html = '<ul class="modal-items-list">';
     filtered.forEach(item => {
@@ -346,7 +269,7 @@ function showCategoryDetails(yearMonth, categoryName) {
         <li>
           <div>
             <strong>${item.omschrijving || 'Geen notitie'}</strong><br>
-            <small style="color: var(--text-muted);">📅 ${item.datum}</small>
+            <small style="color: #718096;">📅 ${item.datum}</small>
           </div>
           <div style="display: flex; align-items: center; gap: 10px;">
             <strong class="tag-uitgave">- € ${parseFloat(item.bedrag).toFixed(2)}</strong>
@@ -389,7 +312,7 @@ function loadMonthTransactionsList(monthItems) {
   monthItems.sort((a, b) => new Date(b.datum) - new Date(a.datum));
 
   if (monthItems.length === 0) {
-    listContainer.innerHTML = '<li style="color: var(--text-muted);">Geen posten gevonden voor deze maand.</li>';
+    listContainer.innerHTML = '<li style="color: #718096;">Geen posten gevonden voor deze maand.</li>';
     return;
   }
 
@@ -399,7 +322,7 @@ function loadMonthTransactionsList(monthItems) {
     li.innerHTML = `
       <div>
         <strong>${item.categorie}</strong> - ${item.omschrijving || 'Geen notitie'}<br>
-        <small style="color: var(--text-muted);">${item.datum}</small>
+        <small style="color: #718096;">${item.datum}</small>
       </div>
       <div style="display: flex; align-items: center; gap: 10px;">
         <strong class="${isInk ? 'tag-inkomst' : 'tag-uitgave'}">
@@ -412,7 +335,7 @@ function loadMonthTransactionsList(monthItems) {
   });
 }
 
-// Jaar overzicht
+// === JAAR OVERZICHT ===
 function initYearSelect(currentYear) {
   const select = document.getElementById('jaar-select');
   if (!select) return;
@@ -440,6 +363,7 @@ function loadYearOverview() {
   yearItems.forEach(item => {
     const bedrag = parseFloat(item.bedrag);
     const itemType = item.type || 'uitgave';
+
     const monthIndex = parseInt(item.datum.split('-')[1], 10) - 1;
 
     if (itemType === 'inkomst') {
@@ -463,7 +387,7 @@ function loadYearOverview() {
   const categories = Object.keys(catTotals).sort();
 
   if (categories.length === 0) {
-    catList.innerHTML = '<div class="row-item"><span style="color:var(--text-muted);">Geen uitgaven voor dit jaar.</span></div>';
+    catList.innerHTML = '<div class="row-item"><span>Geen uitgaven voor dit jaar.</span></div>';
   } else {
     categories.forEach(cat => {
       const div = document.createElement('div');
@@ -483,7 +407,7 @@ function loadYearOverview() {
     div.className = 'row-item';
     div.innerHTML = `
       <span>${name}</span>
-      <strong style="color: ${val >= 0 ? 'var(--success)' : 'var(--danger)'}">
+      <strong style="color: ${val >= 0 ? '#276749' : '#c53030'}">
         ${val >= 0 ? '+' : ''}€ ${val.toFixed(2)}
       </strong>
     `;
@@ -491,7 +415,7 @@ function loadYearOverview() {
   });
 }
 
-// Grafieken
+// === GRAFIEKEN ===
 function loadCharts() {
   const selectedMonth = document.getElementById('maand-select').value || new Date().toISOString().slice(0, 7);
   const selectedYear = document.getElementById('jaar-select').value || new Date().getFullYear().toString();
@@ -520,19 +444,27 @@ function loadCharts() {
       datasets: [{
         label: 'Uitgaven in €',
         data: barCatData,
-        backgroundColor: 'var(--primary)',
+        backgroundColor: '#3182ce',
         borderRadius: 4
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false }
+      },
       scales: {
         y: {
           beginAtZero: true,
-          ticks: { callback: function(value) { return '€ ' + value; } }
+          ticks: {
+            callback: function(value) { return '€ ' + value; }
+          }
         },
-        x: { ticks: { font: { size: 10 } } }
+        x: {
+          ticks: {
+            font: { size: 10 }
+          }
+        }
       }
     }
   });
@@ -560,8 +492,18 @@ function loadCharts() {
     data: {
       labels: ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'],
       datasets: [
-        { label: 'Inkomsten', data: incTotals, backgroundColor: 'var(--success)', borderRadius: 4 },
-        { label: 'Uitgaven', data: expTotals, backgroundColor: 'var(--danger)', borderRadius: 4 }
+        {
+          label: 'Inkomsten',
+          data: incTotals,
+          backgroundColor: '#38a169',
+          borderRadius: 4
+        },
+        {
+          label: 'Uitgaven',
+          data: expTotals,
+          backgroundColor: '#e53e3e',
+          borderRadius: 4
+        }
       ]
     },
     options: {
@@ -569,14 +511,16 @@ function loadCharts() {
       scales: {
         y: {
           beginAtZero: true,
-          ticks: { callback: function(value) { return '€ ' + value; } }
+          ticks: {
+            callback: function(value) { return '€ ' + value; }
+          }
         }
       }
     }
   });
 }
 
-// Excel Export
+// === EXCEL EXPORT ===
 function exportToExcel() {
   const expenses = getExpenses();
   if (expenses.length === 0) {
@@ -602,58 +546,10 @@ function exportToExcel() {
   XLSX.writeFile(workbook, filename);
 }
 
-// JSON Backup & Herstel
-function exportJSONBackup() {
-  const data = {
-    expenses: getExpenses(),
-    templates: getFixedTemplates(),
-    exportDate: new Date().toISOString()
-  };
-
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `ReisBudget_Backup_${new Date().toISOString().slice(0, 10)}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-}
-
-function importJSONBackup() {
-  const fileInput = document.getElementById('import-file');
-  if (!fileInput.files || fileInput.files.length === 0) {
-    alert('Selecteer eerst een backupbestand.');
-    return;
-  }
-
-  const file = fileInput.files[0];
-  const reader = FileReader();
-  reader.onload = function(e) {
-    try {
-      const parsed = JSON.parse(e.target.result);
-      if (parsed.expenses && Array.isArray(parsed.expenses)) {
-        if (confirm('Weet je zeker dat je deze backup wilt terugzetten? Huidige gegevens op dit apparaat worden overschreven.')) {
-          localStorage.setItem('reis_uitgaven', JSON.stringify(parsed.expenses));
-          if (parsed.templates) {
-            localStorage.setItem('reis_vaste_lasten', JSON.stringify(parsed.templates));
-          }
-          alert('Backup succesvol teruggezet!');
-          loadRecentExpenses();
-          loadMonthOverview();
-        }
-      } else {
-        alert('Ongeldig backupbestand.');
-      }
-    } catch (err) {
-      alert('Fout bij het lezen van het bestand.');
-    }
-  };
-  reader.readAsText(file);
-}
-
-// Vaste lasten
+// === VASTE LASTEN BEHEER ===
 function saveFixedTemplate(e) {
   e.preventDefault();
+
   const omschrijving = document.getElementById('fixed-omschrijving').value;
   const bedrag = parseFloat(document.getElementById('fixed-bedrag').value);
 
@@ -673,7 +569,7 @@ function loadFixedTemplates() {
   ul.innerHTML = '';
 
   if (templates.length === 0) {
-    ul.innerHTML = '<li style="color: var(--text-muted);">Nog geen vaste lasten ingesteld.</li>';
+    ul.innerHTML = '<li style="color: #718096;">Nog geen vaste lasten ingesteld.</li>';
     return;
   }
 
@@ -682,9 +578,9 @@ function loadFixedTemplates() {
     li.innerHTML = `
       <div>
         <strong>${item.omschrijving}</strong><br>
-        <small style="color: var(--text-muted);">€ ${parseFloat(item.bedrag).toFixed(2)} p/m</small>
+        <small style="color: #718096;">€ ${parseFloat(item.bedrag).toFixed(2)} p/m</small>
       </div>
-      <button class="btn-delete" onclick="deleteFixedTemplate(${item.id})">🗑️</button>
+      <button class="btn-delete" onclick="deleteFixedTemplate(${item.id})">Verwijder</button>
     `;
     ul.appendChild(li);
   });
@@ -692,8 +588,10 @@ function loadFixedTemplates() {
 
 function deleteFixedTemplate(id) {
   if (!confirm('Weet je zeker dat je deze vaste last wilt verwijderen?')) return;
+
   let templates = getFixedTemplates();
   templates = templates.filter(t => t.id !== id);
   saveFixedTemplatesToStorage(templates);
+
   loadFixedTemplates();
 }
