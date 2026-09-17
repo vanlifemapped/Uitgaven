@@ -94,6 +94,8 @@
     <!-- TAB 2: MAAND OVERZICHT -->
     <section id="tab-maand" class="tab-content">
       <h2>Maandoverzicht</h2>
+      <p class="subtext" style="font-size: 0.85rem; color: #718096; margin-bottom: 15px;">💡 Klik op een categorie hieronder om alle posten van die categorie in te zien.</p>
+      
       <div class="filter-group">
         <label for="maand-select">Kies Maand:</label>
         <input type="month" id="maand-select" onchange="loadMonthOverview()">
@@ -199,6 +201,19 @@
     </section>
 
   </main>
+
+  <!-- POPUP / MODAL VOOR CATEGORIE DETAIL WEERGAVE -->
+  <div id="categoryModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Categorie Details</h3>
+        <button class="modal-close" onclick="closeCategoryModal()">&times;</button>
+      </div>
+      <div id="modalBody" class="modal-body">
+        <!-- Wordt dynamisch gevuld -->
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
