@@ -3,7 +3,7 @@ let barChartInstance = null;
 
 // Categorieën per type
 const CATEGORIES = {
-  uitgave: ['Brandstof', 'Tol', 'Wassen', 'Kingsley', 'Terras', 'Boodschappen', 'Kleding', 'Overnachtingen', 'Diversen', 'Vaste lasten'],
+  uitgave: ['Brandstof', 'Autokosten', 'Wassen', 'Kingsley', 'Terras', 'Boodschappen', 'Kleding', 'Overnachtingen', 'Uitstapjes', 'Diversen', 'Vaste lasten'],
   inkomst: ['Salaris', 'Verhuur', 'Freelance', 'Rendement', 'Diversen inkomsten']
 };
 
@@ -161,7 +161,7 @@ function deleteTransaction(id) {
 
   loadRecentExpenses();
   loadMonthOverview();
-  closeCategoryModal(); // Sluit modal mocht deze open staan
+  closeCategoryModal(); 
 }
 
 function loadRecentExpenses() {
@@ -251,7 +251,6 @@ function loadMonthOverview() {
 // Open de modal met alle posten van een specifieke categorie in die maand
 function showCategoryDetails(yearMonth, categoryName) {
   const expenses = getExpenses();
-  // Filter op de gekozen maand én categorie
   const filtered = expenses.filter(e => e.datum && e.datum.startsWith(yearMonth) && e.categorie === categoryName && (e.type || 'uitgave') === 'uitgave');
   
   filtered.sort((a, b) => new Date(b.datum) - new Date(a.datum));
