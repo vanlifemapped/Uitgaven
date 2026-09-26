@@ -196,6 +196,7 @@ function deleteTransaction(id) {
 
   loadRecentExpenses();
   loadMonthOverview();
+  loadYearOverview();
   closeCategoryModal(); 
 }
 
@@ -214,7 +215,7 @@ function loadRecentExpenses() {
     return;
   }
 
-  recent.forEach(item => {
+    recent.forEach(item => {
     const isInk = item.type === 'inkomst';
     const li = document.createElement('li');
     li.innerHTML = `
@@ -322,16 +323,17 @@ function loadMonthOverview() {
   loadMonthTransactionsList(monthItems);
 }
 
-function showCategoryDetails(yearMonth, categoryName) {
+// Universele modal voor zowel maand als jaar (werkt op basis van 'YYYY-MM' of 'YYYY')
+function showCategoryDetails(periodStr, categoryName) {
   const expenses = getExpenses();
-  const filtered = expenses.filter(e => e.datum && e.datum.startsWith(yearMonth) && e.categorie === categoryName && (e.type || 'uitgave') === 'uitgave');
+  const filtered = expenses.filter(e => e.datum && e.datum.startsWith(periodStr) && e.categorie === categoryName && (e.type || 'uitgave') === 'uitgave');
   
   filtered.sort((a, b) => new Date(b.datum) - new Date(a.datum));
 
   const modalTitle = document.getElementById('modalTitle');
   const modalBody = document.getElementById('modalBody');
 
-  modalTitle.innerText = `${categoryName} (${yearMonth})`;
+  modalTitle.innerText = `${categoryName} (${periodStr})`;
   
   if (filtered.length === 0) {
     modalBody.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">Geen posten gevonden.</p>';
@@ -462,8 +464,11 @@ function loadYearOverview() {
   } else {
     categories.forEach(cat => {
       const div = document.createElement('div');
-      div.className = 'row-item';
-      div.innerHTML = `<span>${cat}</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
+      // Nu ook klikbaar in het jaaroverzicht!
+      div.className = 'row-item clickable-category';
+      div.setAttribute('title', 'Klik om posten te bekijken');
+      div.onclick = () => showCategoryDetails(selectedYear, cat);
+      div.innerHTML = `<span>📂 ${cat} 🔍</span><strong>€ ${catTotals[cat].toFixed(2)}</strong>`;
       catList.appendChild(div);
     });
   }
@@ -514,7 +519,7 @@ function loadCharts() {
       datasets: [{
         label: 'Uitgaven in €',
         data: barCatData,
-        backgroundColor: '#dc2626', // Rood voor uitgaven grafiek
+        backgroundColor: '#dc2626',
         borderRadius: 4
       }]
     },
@@ -554,8 +559,8 @@ function loadCharts() {
     data: {
       labels: ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'],
       datasets: [
-        { label: 'Inkomsten', data: incTotals, backgroundColor: '#16a34a', borderRadius: 4 }, // Groen
-        { label: 'Uitgaven', data: expTotals, backgroundColor: '#dc2626', borderRadius: 4 }  // Rood
+        { label: 'Inkomsten', data: incTotals, backgroundColor: '#16a34a', borderRadius: 4 },
+        { label: 'Uitgaven', data: expTotals, backgroundColor: '#dc2626', borderRadius: 4 }
       ]
     },
     options: {
@@ -632,6 +637,7 @@ function importJSONBackup() {
           alert('Backup succesvol teruggezet!');
           loadRecentExpenses();
           loadMonthOverview();
+          loadYearOverview();
         }
       } else {
         alert('Ongeldig backupbestand.');
